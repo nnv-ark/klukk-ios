@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# Pre-commit hook: downgrade pbxproj objectVersion 100 -> 77 for CI compatibility.
+#
+# Xcode 26 beta writes objectVersion = 100, which GitHub-hosted runners
+# (Xcode 26.3) can't read. We pin to 77 — readable by every Xcode 16+ —
+# and still builds fine in the beta locally.
+#
+# To enable in this clone:   git config core.hooksPath .githooks
+set -euo pipefail
+
+CHANGED=0
+
+while IFS= read -r FILE; do
+    [ -z "$FILE" ] && continue
+    [ -f "$FILE" ] || continue
+    if grep -qE 'objectVersion = 100;|preferredProjectObjectVersion = 100;' "$FILE"; then
+        sed -i '' \
+            -e 's/objectVersion = 100;/objectVersion = 77;/g' \
+            -e 's/preferredProjectObjectVersion = 100;/preferredProjectObjectVersion = 77;/g' \
+            "$FILE"
+        git add "$FILE"
+        echo "pre-commit: downgraded objectVersion 100 -> 77 in $FILE"
+        CHANGED=1
+    fi
+done < <(git diff --cached --name-only --diff-filter=ACM | grep 'project\.pbxproj$' || true)
+
+exit 0
