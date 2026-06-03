@@ -7,7 +7,6 @@ struct StopwatchView: View {
 
     @State private var isRunning = false
     @State private var startedAt: Date?
-    @State private var now: Date = .init()
     @State private var pressed = false
 
     @State private var activeSheet: ActiveSheet?
@@ -15,16 +14,9 @@ struct StopwatchView: View {
     @State private var toast: String?
     @State private var shareURL: URL?
 
-    private let timer = Timer.publish(every: 0.03, on: .main, in: .common).autoconnect()
-
     enum ActiveSheet: Identifiable {
         case calendar, settings, rename, link, share
         var id: Int { hashValue }
-    }
-
-    private var elapsed: TimeInterval {
-        guard let startedAt, isRunning else { return 0 }
-        return now.timeIntervalSince(startedAt)
     }
 
     var body: some View {
@@ -60,7 +52,6 @@ struct StopwatchView: View {
                 .allowsHitTesting(false)
             }
         }
-        .onReceive(timer) { _ in if isRunning { now = Date() } }
         .sheet(item: $activeSheet) { sheet in
             switch sheet {
             case .calendar:
@@ -130,16 +121,24 @@ struct StopwatchView: View {
         }
     }
 
+    /// Timer rendered through TimelineView — no manual Timer.publish, no @State `now`.
+    /// SwiftUI re-renders this subtree at the schedule's cadence when running.
     private var timerDisplay: some View {
-        Text(settings.showCentiseconds
-             ? "\(Format.clock(elapsed)):\(Format.centiseconds(elapsed))"
-             : Format.clock(elapsed))
+        TimelineView(.animation(minimumInterval: 0.03, paused: !isRunning)) { context in
+            let elapsed = currentElapsed(at: context.date)
+            Text(
+                settings.showCentiseconds
+                ? "\(Format.clock(elapsed)):\(Format.centiseconds(elapsed))"
+                : Format.clock(elapsed)
+            )
             .font(.system(size: 36, weight: .semibold, design: .monospaced))
             .monospacedDigit()
+            .contentTransition(.numericText(countsDown: false))
             .foregroundStyle(.black)
             .padding(.horizontal, 18).padding(.vertical, 10)
             .background(.white, in: RoundedRectangle(cornerRadius: 14))
             .shadow(color: .black.opacity(0.08), radius: 14, y: 6)
+        }
     }
 
     private var stopwatchButton: some View {
@@ -166,6 +165,10 @@ struct StopwatchView: View {
             .animation(.spring(duration: 0.18, bounce: 0.3), value: pressed)
         }
         .buttonStyle(.plain)
+        .sensoryFeedback(trigger: isRunning) { _, newValue in
+            guard settings.haptic else { return nil }
+            return newValue ? .impact(weight: .light) : .impact(weight: .medium)
+        }
         .accessibilityLabel(isRunning ? "Stop and save to calendar" : "Start timing")
     }
 
@@ -179,6 +182,7 @@ struct StopwatchView: View {
                 if !store.sessions.isEmpty {
                     Text("\(store.sessions.count)")
                         .font(.caption.monospacedDigit().weight(.bold))
+                        .contentTransition(.numericText())
                         .foregroundStyle(.white)
                         .padding(.horizontal, 7).padding(.vertical, 2)
                         .background(.black, in: .capsule)
@@ -195,12 +199,17 @@ struct StopwatchView: View {
 
     // MARK: - Computed
 
+    private func currentElapsed(at date: Date) -> TimeInterval {
+        guard let startedAt, isRunning else { return 0 }
+        return date.timeIntervalSince(startedAt)
+    }
+
     private var linkedDotColor: Color {
         guard settings.hasLinkedCalendar else { return .red }
-        switch settings.target {
-        case .ios: return .red
-        case .ics: return .blue
-        case .xml: return .gray
+        return switch settings.target {
+        case .ios: .red
+        case .ics: .blue
+        case .xml: .gray
         }
     }
 
@@ -213,18 +222,17 @@ struct StopwatchView: View {
 
     private func tapButton() {
         pressed = true
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.14) { pressed = false }
-        if settings.haptic {
-            let style: UIImpactFeedbackGenerator.FeedbackStyle = isRunning ? .medium : .light
-            UIImpactFeedbackGenerator(style: style).impactOccurred()
+        Task {
+            try? await Task.sleep(for: .milliseconds(140))
+            pressed = false
         }
+
         if !isRunning {
             if !settings.hasLinkedCalendar {
                 activeSheet = .link
                 return
             }
             startedAt = Date()
-            now = Date()
             isRunning = true
         } else {
             let ended = Date()
