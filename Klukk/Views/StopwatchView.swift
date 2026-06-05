@@ -14,6 +14,8 @@ struct StopwatchView: View {
     @State private var toast: String?
     @State private var shareURL: URL?
 
+    private let ballSize: CGFloat = 280
+
     enum ActiveSheet: Identifiable {
         case calendar, settings, rename, link, share
         var id: Int { hashValue }
@@ -22,22 +24,32 @@ struct StopwatchView: View {
     var body: some View {
         @Bindable var settings = settings
         ZStack {
-            Color(.systemGroupedBackground).ignoresSafeArea()
+            // ── Background ── warm skin / yellowish tone
+            Color(red: 0.98, green: 0.92, blue: 0.74).ignoresSafeArea()
 
-            VStack(spacing: 0) {
+            // ── Pink sphere — geometric center of screen ──
+            stopwatchButton
+
+            // ── Timer: floats above the sphere ──
+            timerDisplay
+                .offset(y: -(ballSize / 2 + 56))
+
+            // ── Header pinned to top ──
+            VStack {
                 header
-                Spacer()
-                VStack(spacing: 28) {
-                    timerDisplay
-                    stopwatchButton
-                    openCalendarButton
-                }
+                    .padding(.horizontal, 24)
+                    .padding(.top, 12)
                 Spacer()
             }
-            .padding(.horizontal, 24)
-            .padding(.top, 12)
-            .padding(.bottom, 18)
 
+            // ── Calendar button pinned to bottom ──
+            VStack {
+                Spacer()
+                openCalendarButton
+                    .padding(.bottom, 52)
+            }
+
+            // ── Toast ──
             if let toast {
                 VStack {
                     Spacer()
@@ -121,8 +133,6 @@ struct StopwatchView: View {
         }
     }
 
-    /// Timer rendered through TimelineView — no manual Timer.publish, no @State `now`.
-    /// SwiftUI re-renders this subtree at the schedule's cadence when running.
     private var timerDisplay: some View {
         TimelineView(.animation(minimumInterval: 0.03, paused: !isRunning)) { context in
             let elapsed = currentElapsed(at: context.date)
@@ -144,24 +154,20 @@ struct StopwatchView: View {
     private var stopwatchButton: some View {
         Button(action: tapButton) {
             ZStack {
-                Circle()
-                    .fill(LinearGradient(
-                        colors: [Color(red: 0.93, green: 0.89, blue: 0.42),
-                                 Color(red: 0.81, green: 0.77, blue: 0.30)],
-                        startPoint: .topLeading, endPoint: .bottomTrailing))
-                    .shadow(color: .black.opacity(0.28), radius: 22, y: 12)
+                Image("KlukkBall")
+                    .resizable()
+                    .scaledToFit()
+                    // Sphere PNG is already alpha-masked; shadow follows its true silhouette,
+                    // falling down & to the right onto the warm background.
+                    .shadow(color: .black.opacity(0.32), radius: 26, x: 14, y: 26)
                 if isRunning {
                     Circle()
-                        .strokeBorder(.black.opacity(0.4), lineWidth: 3)
-                        .padding(10)
+                        .strokeBorder(.white.opacity(0.55), lineWidth: 4)
+                        .padding(6)
                 }
-                Text("KLUX")
-                    .font(.system(size: 24, weight: .heavy, design: .default))
-                    .tracking(4)
-                    .foregroundStyle(.black.opacity(0.85))
             }
-            .frame(width: 240, height: 240)
-            .scaleEffect(pressed ? 0.97 : 1)
+            .frame(width: ballSize, height: ballSize)
+            .scaleEffect(pressed ? 0.96 : 1)
             .animation(.spring(duration: 0.18, bounce: 0.3), value: pressed)
         }
         .buttonStyle(.plain)
@@ -221,6 +227,7 @@ struct StopwatchView: View {
     // MARK: - Actions
 
     private func tapButton() {
+        SoundPlayer.shared.tap()
         pressed = true
         Task {
             try? await Task.sleep(for: .milliseconds(140))
