@@ -57,7 +57,7 @@ struct SettingsSheet: View {
 
                 Section {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("KLUX").font(.body.weight(.semibold))
+                        Text("KLUKK").font(.body.weight(.semibold))
                         Text("© NNV ehf. · All rights reserved")
                             .font(.caption).foregroundStyle(.secondary)
                     }

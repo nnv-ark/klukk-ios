@@ -11,7 +11,7 @@ struct LinkCalendarSheet: View {
         @Bindable var settings = settings
         NavigationStack {
             VStack(alignment: .leading, spacing: 14) {
-                Text("Where should KLUX send your recordings?")
+                Text("Where should KLUKK send your recordings?")
                     .font(.title2.weight(.bold))
                     .padding(.top, 8)
 

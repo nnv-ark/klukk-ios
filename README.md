@@ -15,7 +15,7 @@ Tap the big yellow **KLUKK** button to start timing. Tap again to stop, and the 
 
 ## Requirements
 
-- iOS 17.0 or later
+- iOS 18.0 or later
 - Xcode 16 or later (Swift 6)
 
 ## Build

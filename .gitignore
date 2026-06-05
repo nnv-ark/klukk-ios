@@ -43,6 +43,13 @@ Icon?
 .iCloud
 *.icloud
 
+# Build artifacts / archives (keep metadata + screenshots, not the binary archive)
+*.xcarchive/
+*.ipa
+# Stale exported app/ipa that used to live at repo root
+/Klukk.app/
+/Klukk.ipa
+
 # Misc
 *.log
 *.tmp
