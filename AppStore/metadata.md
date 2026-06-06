@@ -9,7 +9,7 @@ parentheses; all entries are within limit.
 
 | Field | Value |
 |-------|-------|
-| **App name** (30) | `KLUKK` |
+| **App name** (30) | `KLUKK!`  _(plain "KLUKK" is taken on the App Store by another developer; the "!" clears the uniqueness check)_ |
 | **Subtitle** (30) | `Time it. Send it to Calendar.` |
 | **Bundle ID** | `ehf.nnv.klukk` |
 | **SKU** | `klukk-ios-001` |
