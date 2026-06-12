@@ -7,7 +7,7 @@ struct StopwatchView: View {
 
     @State private var isRunning = false
     @State private var startedAt: Date?
-    @State private var pressed = false
+    @State private var isPressed = false
 
     @State private var activeSheet: ActiveSheet?
     @State private var pendingSession: Session?
@@ -25,7 +25,7 @@ struct StopwatchView: View {
         @Bindable var settings = settings
         ZStack {
             // ── Background ── warm skin (light) / RAL 8025 brown (dark)
-            Color("Background").ignoresSafeArea()
+            Color(.background).ignoresSafeArea()
 
             // ── Pink sphere — geometric center of screen ──
             stopwatchButton
@@ -131,7 +131,7 @@ struct StopwatchView: View {
             .contentTransition(.numericText(countsDown: false))
             .foregroundStyle(.black)
             .padding(.horizontal, 18).padding(.vertical, 10)
-            .background(.white, in: RoundedRectangle(cornerRadius: 14))
+            .whiteCard()
             .shadow(color: .black.opacity(0.08), radius: 14, y: 6)
         }
     }
@@ -152,8 +152,8 @@ struct StopwatchView: View {
                 }
             }
             .frame(width: ballSize, height: ballSize)
-            .scaleEffect(pressed ? 0.96 : 1)
-            .animation(.spring(duration: 0.18, bounce: 0.3), value: pressed)
+            .scaleEffect(isPressed ? 0.96 : 1)
+            .animation(.spring(duration: 0.18, bounce: 0.3), value: isPressed)
         }
         .buttonStyle(.plain)
         .sensoryFeedback(trigger: isRunning) { _, newValue in
@@ -190,6 +190,16 @@ struct StopwatchView: View {
             .shadow(color: .black.opacity(0.08), radius: 10, y: 4)
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(
+            settings.hasLinkedCalendar
+            ? "Calendar, \(store.sessions.count) sessions, sending to \(linkedLabel)"
+            : "Link a calendar"
+        )
+        .accessibilityHint(
+            settings.hasLinkedCalendar
+            ? "Shows your recorded sessions"
+            : "Choose where recordings are sent"
+        )
     }
 
     // MARK: - Computed
@@ -200,7 +210,8 @@ struct StopwatchView: View {
     }
 
     private var linkedDotColor: Color {
-        guard settings.hasLinkedCalendar else { return .red }
+        // Orange = needs attention (not linked); each destination keeps its own color.
+        guard settings.hasLinkedCalendar else { return .orange }
         return switch settings.target {
         case .ios: .red
         case .ics: .blue
@@ -217,10 +228,10 @@ struct StopwatchView: View {
 
     private func tapButton() {
         SoundPlayer.shared.tap()
-        pressed = true
+        isPressed = true
         Task {
             try? await Task.sleep(for: .milliseconds(140))
-            pressed = false
+            isPressed = false
         }
 
         if !isRunning {
@@ -269,8 +280,12 @@ struct StopwatchView: View {
                 activeSheet = .share
             }
         case .xml:
-            try? XMLExporter.append(session)
-            showToast("Appended · .xml")
+            do {
+                try XMLExporter.append(session)
+                showToast("Appended · .xml")
+            } catch {
+                showToast("Couldn't write .xml")
+            }
         }
     }
 

@@ -6,16 +6,16 @@ struct CalendarPickerView: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var calendars: [EKCalendar] = []
-    @State private var loading = true
+    @State private var isLoading = true
     @State private var errorMessage: String?
     @State private var showCreate = false
     @State private var newCalendarName = ""
-    @State private var creating = false
+    @State private var isCreating = false
 
     var body: some View {
         @Bindable var settings = settings
         Form {
-            if loading {
+            if isLoading {
                 Section {
                     HStack {
                         ProgressView()
@@ -80,7 +80,7 @@ struct CalendarPickerView: View {
     }
 
     private func reload() async {
-        loading = true
+        isLoading = true
         errorMessage = nil
         do {
             let cals = try await EventKitService.shared.writableCalendars()
@@ -93,15 +93,15 @@ struct CalendarPickerView: View {
         } catch {
             errorMessage = "Calendar access not granted. Allow in Settings → Privacy → Calendars."
         }
-        loading = false
+        isLoading = false
     }
 
     private func create() async {
         let name = newCalendarName.trimmingCharacters(in: .whitespaces)
         newCalendarName = ""
         guard !name.isEmpty else { return }
-        creating = true
-        defer { creating = false }
+        isCreating = true
+        defer { isCreating = false }
         do {
             let cal = try await EventKitService.shared.createCalendar(named: name)
             @Bindable var settings = settings
