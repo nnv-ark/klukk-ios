@@ -23,8 +23,7 @@ struct RenameSheet: View {
                     .textFieldStyle(.plain)
                     .font(.title3.weight(.semibold))
                     .padding(14)
-                    .background(.white, in: RoundedRectangle(cornerRadius: 14))
-                    .environment(\.colorScheme, .light)
+                    .whiteCard()
 
                 HStack(spacing: 10) {
                     Button(role: .cancel) {
@@ -33,9 +32,8 @@ struct RenameSheet: View {
                         Text("Discard")
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 12)
-                            .foregroundStyle(.black)
                     }
-                    .background(.white, in: RoundedRectangle(cornerRadius: 14))
+                    .whiteCard()
 
                     Button {
                         let trimmed = title.trimmingCharacters(in: .whitespaces)

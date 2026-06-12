@@ -34,10 +34,7 @@ struct LinkCalendarSheet: View {
                             Image(systemName: "chevron.right").foregroundStyle(.tertiary)
                         }
                         .padding()
-                        .background(.white, in: RoundedRectangle(cornerRadius: 14))
-                        // White card is fixed; keep its contents in light appearance so
-                        // text stays dark/readable even when the phone is in dark mode.
-                        .environment(\.colorScheme, .light)
+                        .whiteCard()
                     }
                     .buttonStyle(.plain)
                     .disabled(requesting)
