@@ -112,13 +112,42 @@ shared container. **No widget yet** — verify this in isolation first.
 
 ---
 
-## Phase 5 — Polish, version bump, ship
+## Phase 5 — Polish & version bump
 
 - Bump `MARKETING_VERSION` → **1.1**, `CURRENT_PROJECT_VERSION` → **2**.
 - New screenshots showing the widget (and the alt-icon picker) for the listing.
 - "What's New" copy for 1.1.
-- Archive → upload → create 1.1 version → attach build → submit (all via the API path
-  already proven for 1.0).
+
+---
+
+## Phase 6 — Release gate: **Fable 5 review + TestFlight beta**  *(before any submission)*
+
+No build is submitted until this gate passes. Three steps, in order:
+
+1. **Independent review — Fable 5.** Hand the 1.1 diff to **Fable 5** (a different model
+   from the Opus author, so blind spots de-correlate) for an adversarial pass aimed at
+   regressions, dark-mode/contrast, the shared-storage migration, and the widget intent.
+   `/code-review ultra` (multi-agent cloud review) is the alternative/companion.
+   **Veto, not authority:** any real bug it finds blocks the build; it does not get to
+   trigger the submission.
+2. **Automated verification.** Build + run on simulator in **light and dark**; exercise
+   start → stop → save, the widget start/stop intent, alternate-icon switch, and the
+   calendar-reconcile-on-launch path. Fix anything that surfaces, then re-run.
+3. **TestFlight beta (real devices).** Upload build 2 to **TestFlight**, not the App Store.
+   A handful of real testers (you + a couple) for **~1–2 days** — this catches device perf,
+   real EventKit prompts, and "feels wrong" UX that a simulator can't. The model pass
+   *gates* this build; it does not replace it.
+
+Gate exit criteria: review clean (or all findings resolved), automated verify green,
+TestFlight feedback addressed.
+
+---
+
+## Phase 7 — Submit
+
+Only after Phase 6 passes **and** you give the explicit go:
+Archive → upload → create the 1.1 App Store version → attach the beta-blessed build →
+submit (via the API path already proven for 1.0). **The ship decision stays human.**
 
 ---
 
