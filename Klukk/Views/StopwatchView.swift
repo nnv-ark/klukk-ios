@@ -104,21 +104,6 @@ struct StopwatchView: View {
 
     private var header: some View {
         HStack {
-            Button {
-                activeSheet = settings.hasLinkedCalendar ? .calendar : .link
-            } label: {
-                HStack(spacing: 8) {
-                    Circle()
-                        .fill(linkedDotColor)
-                        .frame(width: 8, height: 8)
-                    Text(linkedLabel)
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.primary)
-                }
-                .padding(.horizontal, 12).padding(.vertical, 6)
-                .background(.thinMaterial, in: .capsule)
-            }
-
             Spacer()
 
             Button {
@@ -178,13 +163,17 @@ struct StopwatchView: View {
         .accessibilityLabel(isRunning ? "Stop and save to calendar" : "Start timing")
     }
 
+    /// Single calendar entry point. Shows the active destination (dot + label) and the
+    /// session count; opens the session list when linked, or the link sheet when not.
     private var openCalendarButton: some View {
         Button {
-            activeSheet = .calendar
+            activeSheet = settings.hasLinkedCalendar ? .calendar : .link
         } label: {
-            HStack(spacing: 10) {
-                Image(systemName: "calendar")
-                Text("Calendar")
+            HStack(spacing: 9) {
+                Circle()
+                    .fill(linkedDotColor)
+                    .frame(width: 8, height: 8)
+                Text(linkedLabel)
                 if !store.sessions.isEmpty {
                     Text("\(store.sessions.count)")
                         .font(.caption.monospacedDigit().weight(.bold))
