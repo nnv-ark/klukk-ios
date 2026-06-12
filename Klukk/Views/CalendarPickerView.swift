@@ -19,7 +19,7 @@ struct CalendarPickerView: View {
                 Section {
                     HStack {
                         ProgressView()
-                        Text("Loading calendars…").foregroundStyle(.black)
+                        Text("Loading calendars…").foregroundStyle(.primary)
                     }
                 }
             } else if let errorMessage {
@@ -38,14 +38,14 @@ struct CalendarPickerView: View {
                                     .fill(Color(cgColor: cal.cgColor))
                                     .frame(width: 12, height: 12)
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text(cal.title).foregroundStyle(.black)
+                                    Text(cal.title).foregroundStyle(.primary)
                                     Text(cal.source.title)
                                         .font(.caption).foregroundStyle(.secondary)
                                 }
                                 Spacer()
                                 if cal.calendarIdentifier == settings.selectedCalendarID {
                                     Image(systemName: "checkmark")
-                                        .foregroundStyle(.black)
+                                        .foregroundStyle(.primary)
                                 }
                             }
                         }
@@ -58,7 +58,7 @@ struct CalendarPickerView: View {
                     showCreate = true
                 } label: {
                     Label("Create new calendar…", systemImage: "plus")
-                        .foregroundStyle(.black)
+                        .foregroundStyle(.primary)
                 }
             }
         }

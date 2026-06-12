@@ -24,8 +24,8 @@ struct StopwatchView: View {
     var body: some View {
         @Bindable var settings = settings
         ZStack {
-            // ── Background ── warm skin / yellowish tone
-            Color(red: 0.98, green: 0.92, blue: 0.74).ignoresSafeArea()
+            // ── Background ── warm skin (light) / RAL 8025 brown (dark)
+            Color("Background").ignoresSafeArea()
 
             // ── Pink sphere — geometric center of screen ──
             stopwatchButton
@@ -113,7 +113,7 @@ struct StopwatchView: View {
                         .frame(width: 8, height: 8)
                     Text(linkedLabel)
                         .font(.caption.weight(.semibold))
-                        .foregroundStyle(.black)
+                        .foregroundStyle(.primary)
                 }
                 .padding(.horizontal, 12).padding(.vertical, 6)
                 .background(.thinMaterial, in: .capsule)
