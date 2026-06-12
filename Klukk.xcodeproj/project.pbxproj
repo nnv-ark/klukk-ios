@@ -6,6 +6,38 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		BB000000000000000000A00C /* KlukkWidgetsExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = BB000000000000000000A00A /* KlukkWidgetsExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		BB000000000000000000A00E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AA1B0B0100000000000000AA /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = BB000000000000000000A003;
+			remoteInfo = KlukkWidgetsExtension;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		BB000000000000000000A00B /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				BB000000000000000000A00C /* KlukkWidgetsExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		BB000000000000000000A00A /* KlukkWidgetsExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = KlukkWidgetsExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
 /* Begin PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
 		578743052FBE3FF900FFBF21 /* Exceptions for "Klukk" folder in "Copy Bundle Resources" phase from "Klukk" target */ = {
 			isa = PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet;
@@ -15,6 +47,16 @@
 			);
 		};
 /* End PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		BB000000000000000000A00F /* Exceptions for "KlukkWidgets" folder in "KlukkWidgetsExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = BB000000000000000000A003 /* KlukkWidgetsExtension */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		AA1B0B0100000000000000A1 /* Klukk */ = {
@@ -28,10 +70,28 @@
 			path = Klukk;
 			sourceTree = "<group>";
 		};
+		BB000000000000000000A001 /* KlukkShared */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = KlukkShared;
+			sourceTree = "<group>";
+		};
+		BB000000000000000000A002 /* KlukkWidgets */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				BB000000000000000000A00F /* Exceptions for "KlukkWidgets" folder in "KlukkWidgetsExtension" target */,
+			);
+			path = KlukkWidgets;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		AA1B0B0100000000000000A2 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			files = (
+			);
+		};
+		BB000000000000000000A008 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			files = (
 			);
@@ -43,6 +103,8 @@
 			isa = PBXGroup;
 			children = (
 				AA1B0B0100000000000000A1 /* Klukk */,
+				BB000000000000000000A001 /* KlukkShared */,
+				BB000000000000000000A002 /* KlukkWidgets */,
 				AA1B0B0100000000000000A4 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -50,6 +112,7 @@
 		AA1B0B0100000000000000A4 /* Products */ = {
 			isa = PBXGroup;
 			children = (
+				BB000000000000000000A00A /* KlukkWidgetsExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -64,15 +127,41 @@
 				AA1B0B0100000000000000A8 /* Sources */,
 				AA1B0B0100000000000000A2 /* Frameworks */,
 				AA1B0B0100000000000000A9 /* Resources */,
+				BB000000000000000000A00B /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
+			dependencies = (
+				BB000000000000000000A00D /* PBXTargetDependency */,
+			);
 			fileSystemSynchronizedGroups = (
 				AA1B0B0100000000000000A1 /* Klukk */,
+				BB000000000000000000A001 /* KlukkShared */,
 			);
 			name = Klukk;
 			productName = Klukk;
 			productType = "com.apple.product-type.application";
+		};
+		BB000000000000000000A003 /* KlukkWidgetsExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = BB000000000000000000A004 /* Build configuration list for PBXNativeTarget "KlukkWidgetsExtension" */;
+			buildPhases = (
+				BB000000000000000000A007 /* Sources */,
+				BB000000000000000000A008 /* Frameworks */,
+				BB000000000000000000A009 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				BB000000000000000000A001 /* KlukkShared */,
+				BB000000000000000000A002 /* KlukkWidgets */,
+			);
+			name = KlukkWidgetsExtension;
+			productName = KlukkWidgetsExtension;
+			productReference = BB000000000000000000A00A /* KlukkWidgetsExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -85,6 +174,9 @@
 				LastUpgradeCheck = 2650;
 				TargetAttributes = {
 					AA1B0B0100000000000000A6 = {
+						CreatedOnToolsVersion = 16.0;
+					};
+					BB000000000000000000A003 = {
 						CreatedOnToolsVersion = 16.0;
 					};
 				};
@@ -104,12 +196,18 @@
 			projectRoot = "";
 			targets = (
 				AA1B0B0100000000000000A6 /* Klukk */,
+				BB000000000000000000A003 /* KlukkWidgetsExtension */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		AA1B0B0100000000000000A9 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			files = (
+			);
+		};
+		BB000000000000000000A009 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			files = (
 			);
@@ -122,7 +220,20 @@
 			files = (
 			);
 		};
+		BB000000000000000000A007 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			files = (
+			);
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		BB000000000000000000A00D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = BB000000000000000000A003 /* KlukkWidgetsExtension */;
+			targetProxy = BB000000000000000000A00E /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		AA1B0B0100000000000000AC /* Debug configuration for PBXProject "Klukk" */ = {
@@ -253,6 +364,7 @@
 				"ASSETCATALOG_COMPILER_APPICON_NAME[sdk=iphoneos*]" = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
+				CODE_SIGN_ENTITLEMENTS = Klukk/Klukk.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = YES;
@@ -281,6 +393,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
+				CODE_SIGN_ENTITLEMENTS = Klukk/Klukk.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = YES;
@@ -305,6 +418,51 @@
 		};
 /* End XCBuildConfiguration section */
 
+		BB000000000000000000A005 /* Debug configuration for PBXNativeTarget "KlukkWidgetsExtension" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = KlukkWidgets/KlukkWidgets.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = KlukkWidgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "KLUKK!";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "© NNV ehf. All rights reserved.";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks @executable_path/../../Frameworks";
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = ehf.nnv.klukk.KlukkWidgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		BB000000000000000000A006 /* Release configuration for PBXNativeTarget "KlukkWidgetsExtension" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = KlukkWidgets/KlukkWidgets.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = KlukkWidgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "KLUKK!";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "© NNV ehf. All rights reserved.";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks @executable_path/../../Frameworks";
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = ehf.nnv.klukk.KlukkWidgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+
 /* Begin XCConfigurationList section */
 		AA1B0B0100000000000000A7 /* Build configuration list for PBXNativeTarget "Klukk" */ = {
 			isa = XCConfigurationList;
@@ -319,6 +477,14 @@
 			buildConfigurations = (
 				AA1B0B0100000000000000AC /* Debug configuration for PBXProject "Klukk" */,
 				AA1B0B0100000000000000AD /* Release configuration for PBXProject "Klukk" */,
+			);
+			defaultConfigurationName = Release;
+		};
+		BB000000000000000000A004 /* Build configuration list for PBXNativeTarget "KlukkWidgetsExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BB000000000000000000A005 /* Debug configuration for PBXNativeTarget "KlukkWidgetsExtension" */,
+				BB000000000000000000A006 /* Release configuration for PBXNativeTarget "KlukkWidgetsExtension" */,
 			);
 			defaultConfigurationName = Release;
 		};

@@ -15,7 +15,13 @@ final class AppSettings {
     private static let key = "klukk.settings.v1"
 
     static func load() -> AppSettings {
-        guard let data = UserDefaults.standard.data(forKey: key),
+        // One-time migration: pre-1.1 builds stored settings in standard defaults,
+        // which the widget can't read.
+        if AppGroup.defaults.data(forKey: key) == nil,
+           let legacy = UserDefaults.standard.data(forKey: key) {
+            AppGroup.defaults.set(legacy, forKey: key)
+        }
+        guard let data = AppGroup.defaults.data(forKey: key),
               let dto = try? JSONDecoder().decode(SettingsDTO.self, from: data) else {
             return AppSettings()
         }
@@ -41,7 +47,7 @@ final class AppSettings {
             selectedCalendarID: selectedCalendarID
         )
         if let data = try? JSONEncoder().encode(dto) {
-            UserDefaults.standard.set(data, forKey: Self.key)
+            AppGroup.defaults.set(data, forKey: Self.key)
         }
     }
 }

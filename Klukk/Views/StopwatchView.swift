@@ -1,9 +1,11 @@
 import SwiftUI
 import UIKit
+import WidgetKit
 
 struct StopwatchView: View {
     @Environment(AppSettings.self) private var settings
     @Environment(SessionStore.self) private var store
+    @Environment(\.scenePhase) private var scenePhase
 
     @State private var isRunning = false
     @State private var startedAt: Date?
@@ -93,10 +95,38 @@ struct StopwatchView: View {
             }
         }
         .task {
+            syncWithSharedState()
+            await reconcilePendingSessions()
             if !settings.hasLinkedCalendar {
                 try? await Task.sleep(for: .milliseconds(400))
                 activeSheet = .link
             }
+        }
+        .onChange(of: scenePhase) { _, phase in
+            guard phase == .active else { return }
+            syncWithSharedState()
+            store.reload()
+            Task { await reconcilePendingSessions() }
+        }
+    }
+
+    /// Adopt a timer the widget started (or notice one it stopped) so both
+    /// surfaces always agree on the running state.
+    private func syncWithSharedState() {
+        if let shared = RunningState.startedAt {
+            startedAt = shared
+            isRunning = true
+        } else if isRunning && startedAt != RunningState.startedAt {
+            isRunning = false
+            startedAt = nil
+        }
+    }
+
+    /// Deliver sessions the widget recorded while the app wasn't running.
+    private func reconcilePendingSessions() async {
+        for session in store.sessions where session.pendingDelivery == true {
+            await deliver(session)
+            store.markDelivered(session.id)
         }
     }
 
@@ -241,11 +271,15 @@ struct StopwatchView: View {
             }
             startedAt = Date()
             isRunning = true
+            RunningState.startedAt = startedAt
+            WidgetCenter.shared.reloadAllTimelines()
         } else {
             let ended = Date()
             guard let started = startedAt else { return }
             isRunning = false
             startedAt = nil
+            RunningState.startedAt = nil
+            WidgetCenter.shared.reloadAllTimelines()
             let provisional = Session(title: "", startedAt: started, endedAt: ended, target: settings.target)
             let title = Format.renderTitle(settings.titleTemplate, session: provisional, index: store.sessions.count + 1)
             let session = Session(id: provisional.id, title: title, startedAt: started, endedAt: ended, target: settings.target)
