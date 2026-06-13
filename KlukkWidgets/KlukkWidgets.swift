@@ -24,7 +24,7 @@ struct ToggleTimerIntent: AppIntent {
             let settings = SharedSettings.load()
             let provisional = Session(
                 title: "", startedAt: started, endedAt: ended,
-                target: settings.target, pendingDelivery: true
+                pendingDelivery: true
             )
             let title = Format.renderTitle(
                 settings.titleTemplate, session: provisional,

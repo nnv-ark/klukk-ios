@@ -8,37 +8,27 @@ struct LinkCalendarSheet: View {
     @State private var isRequesting = false
 
     var body: some View {
-        @Bindable var settings = settings
         NavigationStack {
-            VStack(alignment: .leading, spacing: 14) {
-                Text("Where should KLUKK send your recordings?")
+            VStack(alignment: .leading, spacing: 16) {
+                Text("Save your sessions to Calendar")
                     .font(.title2.weight(.bold))
                     .padding(.top, 8)
 
-                ForEach(CalendarTarget.allCases) { target in
-                    Button {
-                        Task { await pick(target) }
-                    } label: {
-                        HStack {
-                            Image(systemName: icon(for: target))
-                                .font(.title3)
-                                .frame(width: 36, height: 36)
-                                .background(Color(.systemGray6), in: RoundedRectangle(cornerRadius: 8))
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(target.label).font(.body.weight(.semibold))
-                                Text(subtitle(for: target))
-                                    .font(.caption).foregroundStyle(.secondary)
-                                    .multilineTextAlignment(.leading)
-                            }
-                            Spacer()
-                            Image(systemName: "chevron.right").foregroundStyle(.tertiary)
-                        }
-                        .padding()
-                        .whiteCard()
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(isRequesting)
+                Text("KLUKK turns every timed session into an event in your iOS Calendar. You can export any session as a .ics file, or the whole log as .xml, anytime afterwards.")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+
+                Button {
+                    Task { await link() }
+                } label: {
+                    Text("Link calendar")
+                        .font(.body.weight(.bold))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
                 }
+                .background(Color.yellow, in: RoundedRectangle(cornerRadius: 14))
+                .foregroundStyle(.black)
+                .disabled(isRequesting)
 
                 Spacer()
                 Text("© NNV ehf. · All rights reserved")
@@ -57,31 +47,15 @@ struct LinkCalendarSheet: View {
         }
     }
 
-    private func icon(for target: CalendarTarget) -> String {
-        switch target {
-        case .ios: "calendar"
-        case .ics: "square.and.arrow.up"
-        case .xml: "doc.text"
-        }
-    }
-
-    private func subtitle(for target: CalendarTarget) -> String {
-        switch target {
-        case .ios: "Save to your iPhone's default calendar"
-        case .ics: "Share each session as a .ics file"
-        case .xml: "Append to a local XML document"
-        }
-    }
-
-    private func pick(_ target: CalendarTarget) async {
+    private func link() async {
         isRequesting = true
         defer { isRequesting = false }
-        if target == .ios {
-            let granted = (try? await EventKitService.shared.requestAccess()) ?? false
-            guard granted else { return }
+        let granted = (try? await EventKitService.shared.requestAccess()) ?? false
+        guard granted else { return }
+        if let def = EventKitService.shared.store.defaultCalendarForNewEvents {
+            settings.selectedCalendarID = def.calendarIdentifier
+            settings.selectedCalendarName = def.title
         }
-        @Bindable var settings = settings
-        settings.target = target
         onLinked()
     }
 }

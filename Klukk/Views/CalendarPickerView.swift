@@ -31,6 +31,7 @@ struct CalendarPickerView: View {
                     ForEach(calendars, id: \.calendarIdentifier) { cal in
                         Button {
                             settings.selectedCalendarID = cal.calendarIdentifier
+                            settings.selectedCalendarName = cal.title
                             settings.save()
                         } label: {
                             HStack {
@@ -86,8 +87,9 @@ struct CalendarPickerView: View {
             let cals = try await EventKitService.shared.writableCalendars()
             calendars = cals.sorted { $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }
             if settings.selectedCalendarID == nil,
-               let defaultID = EventKitService.shared.store.defaultCalendarForNewEvents?.calendarIdentifier {
-                settings.selectedCalendarID = defaultID
+               let defaultCal = EventKitService.shared.store.defaultCalendarForNewEvents {
+                settings.selectedCalendarID = defaultCal.calendarIdentifier
+                settings.selectedCalendarName = defaultCal.title
                 settings.save()
             }
         } catch {
@@ -106,6 +108,7 @@ struct CalendarPickerView: View {
             let cal = try await EventKitService.shared.createCalendar(named: name)
             @Bindable var settings = settings
             settings.selectedCalendarID = cal.calendarIdentifier
+            settings.selectedCalendarName = cal.title
             settings.save()
             await reload()
         } catch {
