@@ -14,12 +14,11 @@ struct StopwatchView: View {
     @State private var activeSheet: ActiveSheet?
     @State private var pendingSession: Session?
     @State private var toast: String?
-    @State private var shareURL: URL?
 
     private let ballSize: CGFloat = 280
 
     enum ActiveSheet: Identifiable {
-        case calendar, settings, rename, link, share
+        case calendar, settings, rename, link, duration
         var id: Int { hashValue }
     }
 
@@ -32,9 +31,19 @@ struct StopwatchView: View {
             // ── Pink sphere — geometric center of screen ──
             stopwatchButton
 
-            // ── Timer: floats above the sphere ──
-            timerDisplay
-                .offset(y: -(ballSize / 2 + 56))
+            // ── Timer (tap to set a target) — floats above the sphere ──
+            Button {
+                activeSheet = .duration
+            } label: {
+                VStack(spacing: 7) {
+                    timerDisplay
+                    if let target = settings.targetSeconds {
+                        targetChip(target)
+                    }
+                }
+            }
+            .buttonStyle(.plain)
+            .offset(y: -(ballSize / 2 + 64))
 
             // ── Header pinned to top ──
             VStack {
@@ -87,14 +96,18 @@ struct StopwatchView: View {
                 LinkCalendarSheet {
                     settings.hasLinkedCalendar = true
                     settings.save()
-                    showToast("Linked · \(settings.target.label)")
+                    showToast("Linked · \(settings.selectedCalendarName ?? "Calendar")")
                     activeSheet = nil
                 }
-            case .share:
-                if let shareURL { ShareSheet(url: shareURL) }
+            case .duration:
+                DurationPickerSheet(initial: settings.targetSeconds) { newTarget in
+                    setTarget(newTarget)
+                    activeSheet = nil
+                }
             }
         }
         .task {
+            _ = TimerAlarm.shared   // register the notification delegate early
             syncWithSharedState()
             await reconcilePendingSessions()
             if !settings.hasLinkedCalendar {
@@ -190,28 +203,19 @@ struct StopwatchView: View {
             guard settings.haptic else { return nil }
             return newValue ? .impact(weight: .light) : .impact(weight: .medium)
         }
-        .accessibilityLabel(isRunning ? "Stop and \(settings.target.saveActionLabel.lowercased())" : "Start timing")
+        .accessibilityLabel(isRunning ? "Stop and save to calendar" : "Start timing")
     }
 
-    /// Single calendar entry point. Shows the active destination (dot + label) and the
-    /// session count; opens the session list when linked, or the link sheet when not.
+    /// Single calendar entry point: the destination icon + the selected calendar's name.
+    /// Opens the session list when linked, or the link sheet when not.
     private var openCalendarButton: some View {
         Button {
             activeSheet = settings.hasLinkedCalendar ? .calendar : .link
         } label: {
-            HStack(spacing: 9) {
-                Circle()
-                    .fill(linkedDotColor)
-                    .frame(width: 8, height: 8)
-                Text(linkedLabel)
-                if !store.sessions.isEmpty {
-                    Text("\(store.sessions.count)")
-                        .font(.caption.monospacedDigit().weight(.bold))
-                        .contentTransition(.numericText())
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 7).padding(.vertical, 2)
-                        .background(.black, in: .capsule)
-                }
+            HStack(spacing: 8) {
+                Image(systemName: calendarPillIcon)
+                Text(calendarPillLabel)
+                    .lineLimit(1)
             }
             .font(.callout.weight(.semibold))
             .foregroundStyle(.black)
@@ -220,11 +224,7 @@ struct StopwatchView: View {
             .shadow(color: .black.opacity(0.08), radius: 10, y: 4)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(
-            settings.hasLinkedCalendar
-            ? "Calendar, \(store.sessions.count) sessions, sending to \(linkedLabel)"
-            : "Link a calendar"
-        )
+        .accessibilityLabel(settings.hasLinkedCalendar ? "Calendar: \(calendarPillLabel)" : "Link a calendar")
         .accessibilityHint(
             settings.hasLinkedCalendar
             ? "Shows your recorded sessions"
@@ -232,26 +232,46 @@ struct StopwatchView: View {
         )
     }
 
+    private func targetChip(_ seconds: TimeInterval) -> some View {
+        HStack(spacing: 5) {
+            Image(systemName: "bell.fill").font(.caption2)
+            Text(Format.clock(seconds))
+                .font(.caption.monospacedDigit().weight(.semibold))
+        }
+        .foregroundStyle(.black.opacity(0.65))
+        .padding(.horizontal, 10).padding(.vertical, 4)
+        .background(.white.opacity(0.7), in: .capsule)
+    }
+
+    private func setTarget(_ seconds: TimeInterval?) {
+        settings.targetSeconds = seconds
+        settings.save()
+        guard let seconds else {
+            TimerAlarm.shared.cancel()
+            return
+        }
+        Task {
+            await TimerAlarm.shared.requestAuthorization()
+            if isRunning {
+                TimerAlarm.shared.schedule(after: seconds - currentElapsed(at: Date()))
+            }
+        }
+    }
+
+    private var calendarPillIcon: String {
+        settings.hasLinkedCalendar ? "calendar" : "calendar.badge.exclamationmark"
+    }
+
+    private var calendarPillLabel: String {
+        guard settings.hasLinkedCalendar else { return "Not linked" }
+        return settings.selectedCalendarName ?? "Calendar"
+    }
+
     // MARK: - Computed
 
     private func currentElapsed(at date: Date) -> TimeInterval {
         guard let startedAt, isRunning else { return 0 }
         return date.timeIntervalSince(startedAt)
-    }
-
-    private var linkedDotColor: Color {
-        // Orange = needs attention (not linked); each destination keeps its own color.
-        guard settings.hasLinkedCalendar else { return .orange }
-        return switch settings.target {
-        case .ios: .red
-        case .ics: .blue
-        case .xml: .gray
-        }
-    }
-
-    private var linkedLabel: String {
-        if !settings.hasLinkedCalendar { return "Not linked" }
-        return settings.target.label
     }
 
     // MARK: - Actions
@@ -272,6 +292,10 @@ struct StopwatchView: View {
             startedAt = Date()
             isRunning = true
             RunningState.startedAt = startedAt
+            if let target = settings.targetSeconds {
+                Task { await TimerAlarm.shared.requestAuthorization() }
+                TimerAlarm.shared.schedule(after: target)
+            }
             WidgetCenter.shared.reloadAllTimelines()
         } else {
             let ended = Date()
@@ -279,10 +303,11 @@ struct StopwatchView: View {
             isRunning = false
             startedAt = nil
             RunningState.startedAt = nil
+            TimerAlarm.shared.cancel()
             WidgetCenter.shared.reloadAllTimelines()
-            let provisional = Session(title: "", startedAt: started, endedAt: ended, target: settings.target)
+            let provisional = Session(title: "", startedAt: started, endedAt: ended)
             let title = Format.renderTitle(settings.titleTemplate, session: provisional, index: store.sessions.count + 1)
-            let session = Session(id: provisional.id, title: title, startedAt: started, endedAt: ended, target: settings.target)
+            let session = Session(id: provisional.id, title: title, startedAt: started, endedAt: ended)
             if settings.confirmRename {
                 pendingSession = session
                 activeSheet = .rename
@@ -299,27 +324,14 @@ struct StopwatchView: View {
         Task { await deliver(finalSession) }
     }
 
+    /// Every session is written to the iOS Calendar. .ics / .xml are export actions
+    /// available later from the session list.
     private func deliver(_ session: Session) async {
-        switch session.target {
-        case .ios:
-            do {
-                try await EventKitService.shared.save(session, calendarID: settings.selectedCalendarID)
-                showToast("Saved · iOS Calendar")
-            } catch {
-                showToast("Couldn't save to Calendar")
-            }
-        case .ics:
-            if let url = try? ICSExporter.makeFile(for: session) {
-                shareURL = url
-                activeSheet = .share
-            }
-        case .xml:
-            do {
-                try XMLExporter.append(session)
-                showToast("Appended · .xml")
-            } catch {
-                showToast("Couldn't write .xml")
-            }
+        do {
+            try await EventKitService.shared.save(session, calendarID: settings.selectedCalendarID)
+            showToast("Saved · \(settings.selectedCalendarName ?? "Calendar")")
+        } catch {
+            showToast("Couldn't save to Calendar")
         }
     }
 

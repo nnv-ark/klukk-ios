@@ -47,7 +47,6 @@ enum RunningState {
 /// The subset of the app settings the widget needs. Decodes from the same JSON the
 /// app writes (extra keys are ignored by `JSONDecoder`).
 struct SharedSettings: Codable {
-    var target: CalendarTarget = .ios
     var titleTemplate: String = "Session {time}"
 
     static func load() -> SharedSettings {

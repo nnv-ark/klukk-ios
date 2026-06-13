@@ -1,10 +1,14 @@
 import Foundation
 import Observation
 
+enum AppAppearance: String, Codable, CaseIterable {
+    case system, light, dark
+}
+
 @MainActor
 @Observable
 final class AppSettings {
-    var target: CalendarTarget = .ios
+    var appearance: AppAppearance = .system
     var titleTemplate: String = "Session {time}"
     var titlePresets: [String] = AppSettings.defaultPresets
     var presetsSeed: Int = AppSettings.currentPresetsSeed
@@ -13,6 +17,8 @@ final class AppSettings {
     var haptic: Bool = true
     var hasLinkedCalendar: Bool = false
     var selectedCalendarID: String? = nil
+    var selectedCalendarName: String? = nil
+    var targetSeconds: TimeInterval? = nil
 
     static let defaultPresets = [
         "Session {time}", "{date} {time}", "Focus {n}",
@@ -45,7 +51,7 @@ final class AppSettings {
             return AppSettings()
         }
         let s = AppSettings()
-        s.target = dto.target
+        s.appearance = dto.appearance ?? .system
         s.titleTemplate = dto.titleTemplate
         s.titlePresets = dto.titlePresets ?? Self.defaultPresets
         // Top up newly-added default presets once for existing users; deletions stick.
@@ -60,12 +66,14 @@ final class AppSettings {
         s.haptic = dto.haptic
         s.hasLinkedCalendar = dto.hasLinkedCalendar
         s.selectedCalendarID = dto.selectedCalendarID
+        s.selectedCalendarName = dto.selectedCalendarName
+        s.targetSeconds = dto.targetSeconds
         return s
     }
 
     func save() {
         let dto = SettingsDTO(
-            target: target,
+            appearance: appearance,
             titleTemplate: titleTemplate,
             titlePresets: titlePresets,
             presetsSeed: presetsSeed,
@@ -73,7 +81,9 @@ final class AppSettings {
             showCentiseconds: showCentiseconds,
             haptic: haptic,
             hasLinkedCalendar: hasLinkedCalendar,
-            selectedCalendarID: selectedCalendarID
+            selectedCalendarID: selectedCalendarID,
+            selectedCalendarName: selectedCalendarName,
+            targetSeconds: targetSeconds
         )
         if let data = try? JSONEncoder().encode(dto) {
             AppGroup.defaults.set(data, forKey: Self.key)
@@ -82,7 +92,7 @@ final class AppSettings {
 }
 
 private struct SettingsDTO: Codable {
-    var target: CalendarTarget
+    var appearance: AppAppearance?   // optional so pre-toggle settings still decode
     var titleTemplate: String
     var titlePresets: [String]?   // optional so pre-1.1 settings still decode
     var presetsSeed: Int?         // tracks which default-preset batch was seeded
@@ -91,4 +101,6 @@ private struct SettingsDTO: Codable {
     var haptic: Bool
     var hasLinkedCalendar: Bool
     var selectedCalendarID: String?
+    var selectedCalendarName: String?
+    var targetSeconds: TimeInterval?
 }

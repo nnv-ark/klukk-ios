@@ -7,18 +7,16 @@ struct SettingsSheet: View {
     let onClear: () -> Void
 
     @State private var confirmClear = false
-    @State private var xmlFileExists = false
-    @State private var showXMLShare = false
+    @State private var xmlExport: ShareableURL?
 
     var body: some View {
-        @Bindable var settings = settings
         NavigationStack {
             Form {
-                destinationSection
-                if settings.target == .ios { calendarSection }
-                if settings.target == .xml { xmlSection }
+                calendarSection
+                exportSection
                 namingSection
                 behaviorSection
+                appearanceSection
                 clearSection
                 footerSection
             }
@@ -29,61 +27,33 @@ struct SettingsSheet: View {
                     Button("Close") { dismiss() }
                 }
             }
-            .onChange(of: settings.target) { _, _ in settings.save() }
             .onChange(of: settings.titleTemplate) { _, _ in settings.save() }
             .onChange(of: settings.confirmRename) { _, _ in settings.save() }
             .onChange(of: settings.showCentiseconds) { _, _ in settings.save() }
             .onChange(of: settings.haptic) { _, _ in settings.save() }
+            .onChange(of: settings.appearance) { _, _ in settings.save() }
             .confirmationDialog("Delete all recorded sessions?", isPresented: $confirmClear, titleVisibility: .visible) {
                 Button("Delete", role: .destructive) { onClear() }
                 Button("Cancel", role: .cancel) {}
             }
-            .task { refreshXMLStatus() }
-            .onChange(of: store.sessions.count) { _, _ in refreshXMLStatus() }
-            .sheet(isPresented: $showXMLShare) {
-                ShareSheet(url: XMLExporter.fileURL)
+            .sheet(item: $xmlExport) { item in
+                ShareSheet(url: item.url)
             }
         }
-    }
-
-    // MARK: - XML status
-
-    private var xmlStatusCaption: String {
-        guard xmlFileExists else { return "No sessions yet" }
-        let count = store.sessions.filter { $0.target == .xml }.count
-        return count == 1 ? "1 session recorded" : "\(count) sessions recorded"
-    }
-
-    private func refreshXMLStatus() {
-        xmlFileExists = FileManager.default.fileExists(atPath: XMLExporter.fileURL.path)
     }
 
     // MARK: - Sections
 
     @ViewBuilder
-    private var destinationSection: some View {
-        @Bindable var settings = settings
-        Section("Send recordings to") {
-            Picker("Destination", selection: $settings.target) {
-                ForEach(CalendarTarget.allCases) { target in
-                    Text(target.label).tag(target)
-                }
-            }
-            .pickerStyle(.inline)
-            .labelsHidden()
-        }
-    }
-
-    @ViewBuilder
     private var calendarSection: some View {
-        Section("iOS Calendar") {
+        Section("Calendar") {
             NavigationLink {
                 CalendarPickerView()
             } label: {
                 HStack {
-                    Text("Calendar")
+                    Label("Calendar", systemImage: "calendar")
                     Spacer()
-                    Text(settings.selectedCalendarID == nil ? "Default" : "Choose…")
+                    Text(settings.selectedCalendarName ?? "Default")
                         .foregroundStyle(.secondary)
                 }
             }
@@ -91,17 +61,20 @@ struct SettingsSheet: View {
     }
 
     @ViewBuilder
-    private var xmlSection: some View {
-        Section("XML file") {
+    private var exportSection: some View {
+        Section {
             Button {
-                showXMLShare = true
+                if let url = try? XMLExporter.makeFile(from: store.sessions) {
+                    xmlExport = ShareableURL(url: url)
+                }
             } label: {
-                Label("Share Klukk.xml", systemImage: "square.and.arrow.up")
+                Label("Export all as .xml", systemImage: "square.and.arrow.up")
             }
-            .disabled(!xmlFileExists)
-            Text(xmlStatusCaption)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            .disabled(store.sessions.isEmpty)
+        } header: {
+            Text("Export")
+        } footer: {
+            Text("Every session is saved to your calendar. Export the whole log as .xml, or share a single session as .ics from the calendar list.")
         }
     }
 
@@ -115,7 +88,7 @@ struct SettingsSheet: View {
                 PresetsView()
             } label: {
                 HStack {
-                    Text("Preset")
+                    Text("Presets")
                     Spacer()
                     Text(presetTrailingLabel)
                         .foregroundStyle(.secondary)
@@ -136,6 +109,20 @@ struct SettingsSheet: View {
         Section("Behavior") {
             Toggle("Show centiseconds", isOn: $settings.showCentiseconds)
             Toggle("Haptic on start/stop", isOn: $settings.haptic)
+        }
+    }
+
+    @ViewBuilder
+    private var appearanceSection: some View {
+        @Bindable var settings = settings
+        Section("Appearance") {
+            Picker("Appearance", selection: $settings.appearance) {
+                Text("System").tag(AppAppearance.system)
+                Text("Light").tag(AppAppearance.light)
+                Text("Dark").tag(AppAppearance.dark)
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
         }
     }
 

@@ -10,6 +10,18 @@ struct KlukkApp: App {
             StopwatchView()
                 .environment(settings)
                 .environment(sessionStore)
+                .preferredColorScheme(settings.appearance.colorScheme)
+        }
+    }
+}
+
+extension AppAppearance {
+    /// nil = follow the system; otherwise force light/dark app-wide.
+    var colorScheme: ColorScheme? {
+        switch self {
+        case .system: nil
+        case .light: .light
+        case .dark: .dark
         }
     }
 }
