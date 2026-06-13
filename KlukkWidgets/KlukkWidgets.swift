@@ -19,19 +19,13 @@ struct ToggleTimerIntent: AppIntent {
 
     func perform() async throws -> some IntentResult {
         if let started = RunningState.startedAt {
-            // Stop: record the session; the app delivers it on next launch.
-            let ended = Date()
-            let settings = SharedSettings.load()
-            let provisional = Session(
-                title: "", startedAt: started, endedAt: ended,
-                pendingDelivery: true
-            )
-            let title = Format.renderTitle(
-                settings.titleTemplate, session: provisional,
+            // Stop: record the session; the app delivers it to the calendar on next launch.
+            var session = Session(title: "", startedAt: started, endedAt: Date(), pendingDelivery: true)
+            session.title = Format.renderTitle(
+                SharedSettings.load().titleTemplate,
+                session: session,
                 index: SharedStore.load().count + 1
             )
-            var session = provisional
-            session.title = title
             SharedStore.append(session)
             RunningState.startedAt = nil
         } else {
