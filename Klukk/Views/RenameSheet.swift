@@ -23,7 +23,7 @@ struct RenameSheet: View {
                     .textFieldStyle(.plain)
                     .font(.title3.weight(.semibold))
                     .padding(14)
-                    .background(.white, in: RoundedRectangle(cornerRadius: 14))
+                    .whiteCard()
 
                 HStack(spacing: 10) {
                     Button(role: .cancel) {
@@ -33,13 +33,13 @@ struct RenameSheet: View {
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 12)
                     }
-                    .background(.white, in: RoundedRectangle(cornerRadius: 14))
+                    .whiteCard()
 
                     Button {
                         let trimmed = title.trimmingCharacters(in: .whitespaces)
                         onSave(trimmed.isEmpty ? session.title : trimmed)
                     } label: {
-                        Text("Save to calendar")
+                        Text(session.target.saveActionLabel)
                             .font(.body.weight(.bold))
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 12)

@@ -6,6 +6,9 @@ struct Session: Identifiable, Codable, Hashable {
     var startedAt: Date
     var endedAt: Date
     var target: CalendarTarget
+    /// Set by the widget when it records a session the app hasn't yet delivered
+    /// to its destination. Optional so pre-1.1 JSON still decodes (nil = delivered).
+    var pendingDelivery: Bool? = nil
 
     var duration: TimeInterval { endedAt.timeIntervalSince(startedAt) }
 }
@@ -22,6 +25,15 @@ enum CalendarTarget: String, Codable, CaseIterable, Identifiable {
         case .ios: "iOS Calendar"
         case .ics: "Share as .ics"
         case .xml: ".xml document"
+        }
+    }
+
+    /// Verb-led label for the confirm/save button, matching where the session goes.
+    var saveActionLabel: String {
+        switch self {
+        case .ios: "Save to calendar"
+        case .ics: "Save as .ics"
+        case .xml: "Save to .xml"
         }
     }
 }

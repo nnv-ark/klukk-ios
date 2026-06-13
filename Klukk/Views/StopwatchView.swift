@@ -1,13 +1,15 @@
 import SwiftUI
 import UIKit
+import WidgetKit
 
 struct StopwatchView: View {
     @Environment(AppSettings.self) private var settings
     @Environment(SessionStore.self) private var store
+    @Environment(\.scenePhase) private var scenePhase
 
     @State private var isRunning = false
     @State private var startedAt: Date?
-    @State private var pressed = false
+    @State private var isPressed = false
 
     @State private var activeSheet: ActiveSheet?
     @State private var pendingSession: Session?
@@ -24,8 +26,8 @@ struct StopwatchView: View {
     var body: some View {
         @Bindable var settings = settings
         ZStack {
-            // ── Background ── warm skin / yellowish tone
-            Color(red: 0.98, green: 0.92, blue: 0.74).ignoresSafeArea()
+            // ── Background ── warm skin (light) / RAL 8025 brown (dark)
+            Color(.background).ignoresSafeArea()
 
             // ── Pink sphere — geometric center of screen ──
             stopwatchButton
@@ -93,10 +95,38 @@ struct StopwatchView: View {
             }
         }
         .task {
+            syncWithSharedState()
+            await reconcilePendingSessions()
             if !settings.hasLinkedCalendar {
                 try? await Task.sleep(for: .milliseconds(400))
                 activeSheet = .link
             }
+        }
+        .onChange(of: scenePhase) { _, phase in
+            guard phase == .active else { return }
+            syncWithSharedState()
+            store.reload()
+            Task { await reconcilePendingSessions() }
+        }
+    }
+
+    /// Adopt a timer the widget started (or notice one it stopped) so both
+    /// surfaces always agree on the running state.
+    private func syncWithSharedState() {
+        if let shared = RunningState.startedAt {
+            startedAt = shared
+            isRunning = true
+        } else if isRunning && startedAt != RunningState.startedAt {
+            isRunning = false
+            startedAt = nil
+        }
+    }
+
+    /// Deliver sessions the widget recorded while the app wasn't running.
+    private func reconcilePendingSessions() async {
+        for session in store.sessions where session.pendingDelivery == true {
+            await deliver(session)
+            store.markDelivered(session.id)
         }
     }
 
@@ -104,21 +134,6 @@ struct StopwatchView: View {
 
     private var header: some View {
         HStack {
-            Button {
-                activeSheet = settings.hasLinkedCalendar ? .calendar : .link
-            } label: {
-                HStack(spacing: 8) {
-                    Circle()
-                        .fill(linkedDotColor)
-                        .frame(width: 8, height: 8)
-                    Text(linkedLabel)
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.black)
-                }
-                .padding(.horizontal, 12).padding(.vertical, 6)
-                .background(.thinMaterial, in: .capsule)
-            }
-
             Spacer()
 
             Button {
@@ -146,7 +161,7 @@ struct StopwatchView: View {
             .contentTransition(.numericText(countsDown: false))
             .foregroundStyle(.black)
             .padding(.horizontal, 18).padding(.vertical, 10)
-            .background(.white, in: RoundedRectangle(cornerRadius: 14))
+            .whiteCard()
             .shadow(color: .black.opacity(0.08), radius: 14, y: 6)
         }
     }
@@ -167,24 +182,28 @@ struct StopwatchView: View {
                 }
             }
             .frame(width: ballSize, height: ballSize)
-            .scaleEffect(pressed ? 0.96 : 1)
-            .animation(.spring(duration: 0.18, bounce: 0.3), value: pressed)
+            .scaleEffect(isPressed ? 0.96 : 1)
+            .animation(.spring(duration: 0.18, bounce: 0.3), value: isPressed)
         }
         .buttonStyle(.plain)
         .sensoryFeedback(trigger: isRunning) { _, newValue in
             guard settings.haptic else { return nil }
             return newValue ? .impact(weight: .light) : .impact(weight: .medium)
         }
-        .accessibilityLabel(isRunning ? "Stop and save to calendar" : "Start timing")
+        .accessibilityLabel(isRunning ? "Stop and \(settings.target.saveActionLabel.lowercased())" : "Start timing")
     }
 
+    /// Single calendar entry point. Shows the active destination (dot + label) and the
+    /// session count; opens the session list when linked, or the link sheet when not.
     private var openCalendarButton: some View {
         Button {
-            activeSheet = .calendar
+            activeSheet = settings.hasLinkedCalendar ? .calendar : .link
         } label: {
-            HStack(spacing: 10) {
-                Image(systemName: "calendar")
-                Text("Calendar")
+            HStack(spacing: 9) {
+                Circle()
+                    .fill(linkedDotColor)
+                    .frame(width: 8, height: 8)
+                Text(linkedLabel)
                 if !store.sessions.isEmpty {
                     Text("\(store.sessions.count)")
                         .font(.caption.monospacedDigit().weight(.bold))
@@ -201,6 +220,16 @@ struct StopwatchView: View {
             .shadow(color: .black.opacity(0.08), radius: 10, y: 4)
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(
+            settings.hasLinkedCalendar
+            ? "Calendar, \(store.sessions.count) sessions, sending to \(linkedLabel)"
+            : "Link a calendar"
+        )
+        .accessibilityHint(
+            settings.hasLinkedCalendar
+            ? "Shows your recorded sessions"
+            : "Choose where recordings are sent"
+        )
     }
 
     // MARK: - Computed
@@ -211,7 +240,8 @@ struct StopwatchView: View {
     }
 
     private var linkedDotColor: Color {
-        guard settings.hasLinkedCalendar else { return .red }
+        // Orange = needs attention (not linked); each destination keeps its own color.
+        guard settings.hasLinkedCalendar else { return .orange }
         return switch settings.target {
         case .ios: .red
         case .ics: .blue
@@ -228,10 +258,10 @@ struct StopwatchView: View {
 
     private func tapButton() {
         SoundPlayer.shared.tap()
-        pressed = true
+        isPressed = true
         Task {
             try? await Task.sleep(for: .milliseconds(140))
-            pressed = false
+            isPressed = false
         }
 
         if !isRunning {
@@ -241,11 +271,15 @@ struct StopwatchView: View {
             }
             startedAt = Date()
             isRunning = true
+            RunningState.startedAt = startedAt
+            WidgetCenter.shared.reloadAllTimelines()
         } else {
             let ended = Date()
             guard let started = startedAt else { return }
             isRunning = false
             startedAt = nil
+            RunningState.startedAt = nil
+            WidgetCenter.shared.reloadAllTimelines()
             let provisional = Session(title: "", startedAt: started, endedAt: ended, target: settings.target)
             let title = Format.renderTitle(settings.titleTemplate, session: provisional, index: store.sessions.count + 1)
             let session = Session(id: provisional.id, title: title, startedAt: started, endedAt: ended, target: settings.target)
@@ -280,8 +314,12 @@ struct StopwatchView: View {
                 activeSheet = .share
             }
         case .xml:
-            try? XMLExporter.append(session)
-            showToast("Appended · .xml")
+            do {
+                try XMLExporter.append(session)
+                showToast("Appended · .xml")
+            } catch {
+                showToast("Couldn't write .xml")
+            }
         }
     }
 

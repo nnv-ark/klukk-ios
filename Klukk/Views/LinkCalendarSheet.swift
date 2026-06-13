@@ -5,7 +5,7 @@ struct LinkCalendarSheet: View {
     @Environment(\.dismiss) private var dismiss
     let onLinked: () -> Void
 
-    @State private var requesting = false
+    @State private var isRequesting = false
 
     var body: some View {
         @Bindable var settings = settings
@@ -34,10 +34,10 @@ struct LinkCalendarSheet: View {
                             Image(systemName: "chevron.right").foregroundStyle(.tertiary)
                         }
                         .padding()
-                        .background(.white, in: RoundedRectangle(cornerRadius: 14))
+                        .whiteCard()
                     }
                     .buttonStyle(.plain)
-                    .disabled(requesting)
+                    .disabled(isRequesting)
                 }
 
                 Spacer()
@@ -74,8 +74,8 @@ struct LinkCalendarSheet: View {
     }
 
     private func pick(_ target: CalendarTarget) async {
-        requesting = true
-        defer { requesting = false }
+        isRequesting = true
+        defer { isRequesting = false }
         if target == .ios {
             let granted = (try? await EventKitService.shared.requestAccess()) ?? false
             guard granted else { return }
