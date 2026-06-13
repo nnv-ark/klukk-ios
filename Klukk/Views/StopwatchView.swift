@@ -84,7 +84,7 @@ struct StopwatchView: View {
             case .rename:
                 if let pendingSession {
                     RenameSheet(session: pendingSession) { finalTitle in
-                        finalize(session: pendingSession, title: finalTitle)
+                        finalize(pendingSession, renamedTo: finalTitle)
                         self.pendingSession = nil
                         activeSheet = nil
                     } onDiscard: {
@@ -129,7 +129,7 @@ struct StopwatchView: View {
         if let shared = RunningState.startedAt {
             startedAt = shared
             isRunning = true
-        } else if isRunning && startedAt != RunningState.startedAt {
+        } else if isRunning {
             isRunning = false
             startedAt = nil
         }
@@ -278,50 +278,62 @@ struct StopwatchView: View {
 
     private func tapButton() {
         SoundPlayer.shared.tap()
+        flashPress()
+
+        if isRunning {
+            let session = stopTimer()
+            if settings.confirmRename {
+                pendingSession = session
+                activeSheet = .rename
+            } else {
+                finalize(session)
+            }
+        } else if settings.hasLinkedCalendar {
+            startTimer()
+        } else {
+            activeSheet = .link
+        }
+    }
+
+    private func flashPress() {
         isPressed = true
         Task {
             try? await Task.sleep(for: .milliseconds(140))
             isPressed = false
         }
-
-        if !isRunning {
-            if !settings.hasLinkedCalendar {
-                activeSheet = .link
-                return
-            }
-            startedAt = Date()
-            isRunning = true
-            RunningState.startedAt = startedAt
-            if let target = settings.targetSeconds {
-                Task { await TimerAlarm.shared.requestAuthorization() }
-                TimerAlarm.shared.schedule(after: target)
-            }
-            WidgetCenter.shared.reloadAllTimelines()
-        } else {
-            let ended = Date()
-            guard let started = startedAt else { return }
-            isRunning = false
-            startedAt = nil
-            RunningState.startedAt = nil
-            TimerAlarm.shared.cancel()
-            WidgetCenter.shared.reloadAllTimelines()
-            let provisional = Session(title: "", startedAt: started, endedAt: ended)
-            let title = Format.renderTitle(settings.titleTemplate, session: provisional, index: store.sessions.count + 1)
-            let session = Session(id: provisional.id, title: title, startedAt: started, endedAt: ended)
-            if settings.confirmRename {
-                pendingSession = session
-                activeSheet = .rename
-            } else {
-                finalize(session: session, title: title)
-            }
-        }
     }
 
-    private func finalize(session: Session, title: String) {
-        var finalSession = session
-        finalSession.title = title
-        store.add(finalSession)
-        Task { await deliver(finalSession) }
+    private func startTimer() {
+        startedAt = Date()
+        isRunning = true
+        RunningState.startedAt = startedAt
+        if let target = settings.targetSeconds {
+            Task { await TimerAlarm.shared.requestAuthorization() }
+            TimerAlarm.shared.schedule(after: target)
+        }
+        WidgetCenter.shared.reloadAllTimelines()
+    }
+
+    /// Stops the clock and returns the named, but not-yet-delivered, session.
+    private func stopTimer() -> Session {
+        let ended = Date()
+        let started = startedAt ?? ended
+        isRunning = false
+        startedAt = nil
+        RunningState.startedAt = nil
+        TimerAlarm.shared.cancel()
+        WidgetCenter.shared.reloadAllTimelines()
+
+        var session = Session(title: "", startedAt: started, endedAt: ended)
+        session.title = Format.renderTitle(settings.titleTemplate, session: session, index: store.sessions.count + 1)
+        return session
+    }
+
+    private func finalize(_ session: Session, renamedTo title: String? = nil) {
+        var session = session
+        if let title { session.title = title }
+        store.add(session)
+        Task { await deliver(session) }
     }
 
     /// Every session is written to the iOS Calendar. .ics / .xml are export actions
