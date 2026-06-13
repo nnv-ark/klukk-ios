@@ -39,7 +39,7 @@ struct RenameSheet: View {
                         let trimmed = title.trimmingCharacters(in: .whitespaces)
                         onSave(trimmed.isEmpty ? session.title : trimmed)
                     } label: {
-                        Text("Save to calendar")
+                        Text(session.target.saveActionLabel)
                             .font(.body.weight(.bold))
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 12)

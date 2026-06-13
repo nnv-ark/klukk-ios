@@ -27,4 +27,13 @@ enum CalendarTarget: String, Codable, CaseIterable, Identifiable {
         case .xml: ".xml document"
         }
     }
+
+    /// Verb-led label for the confirm/save button, matching where the session goes.
+    var saveActionLabel: String {
+        switch self {
+        case .ios: "Save to calendar"
+        case .ics: "Save as .ics"
+        case .xml: "Save to .xml"
+        }
+    }
 }

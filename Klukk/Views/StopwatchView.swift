@@ -190,7 +190,7 @@ struct StopwatchView: View {
             guard settings.haptic else { return nil }
             return newValue ? .impact(weight: .light) : .impact(weight: .medium)
         }
-        .accessibilityLabel(isRunning ? "Stop and save to calendar" : "Start timing")
+        .accessibilityLabel(isRunning ? "Stop and \(settings.target.saveActionLabel.lowercased())" : "Start timing")
     }
 
     /// Single calendar entry point. Shows the active destination (dot + label) and the

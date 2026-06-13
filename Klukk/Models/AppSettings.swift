@@ -6,13 +6,32 @@ import Observation
 final class AppSettings {
     var target: CalendarTarget = .ios
     var titleTemplate: String = "Session {time}"
+    var titlePresets: [String] = AppSettings.defaultPresets
+    var presetsSeed: Int = AppSettings.currentPresetsSeed
     var confirmRename: Bool = false
     var showCentiseconds: Bool = true
     var haptic: Bool = true
     var hasLinkedCalendar: Bool = false
     var selectedCalendarID: String? = nil
 
+    static let defaultPresets = [
+        "Session {time}", "{date} {time}", "Focus {n}",
+        "Work", "Meditation", "Workout"
+    ]
+    /// Bump when adding new default presets; existing users get the new ones topped up
+    /// once (deletions afterwards stick).
+    static let currentPresetsSeed = 2
+    /// Tokens that expand when a session is named. Shown wherever a template is edited.
+    static let templateTokens = "{time} {date} {n} {duration}"
+
     private static let key = "klukk.settings.v1"
+
+    func addPreset(_ template: String) {
+        let trimmed = template.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty, !titlePresets.contains(trimmed) else { return }
+        titlePresets.append(trimmed)
+        save()
+    }
 
     static func load() -> AppSettings {
         // One-time migration: pre-1.1 builds stored settings in standard defaults,
@@ -28,6 +47,14 @@ final class AppSettings {
         let s = AppSettings()
         s.target = dto.target
         s.titleTemplate = dto.titleTemplate
+        s.titlePresets = dto.titlePresets ?? Self.defaultPresets
+        // Top up newly-added default presets once for existing users; deletions stick.
+        if (dto.presetsSeed ?? 1) < Self.currentPresetsSeed {
+            for preset in Self.defaultPresets where !s.titlePresets.contains(preset) {
+                s.titlePresets.append(preset)
+            }
+        }
+        s.presetsSeed = Self.currentPresetsSeed
         s.confirmRename = dto.confirmRename
         s.showCentiseconds = dto.showCentiseconds
         s.haptic = dto.haptic
@@ -40,6 +67,8 @@ final class AppSettings {
         let dto = SettingsDTO(
             target: target,
             titleTemplate: titleTemplate,
+            titlePresets: titlePresets,
+            presetsSeed: presetsSeed,
             confirmRename: confirmRename,
             showCentiseconds: showCentiseconds,
             haptic: haptic,
@@ -55,6 +84,8 @@ final class AppSettings {
 private struct SettingsDTO: Codable {
     var target: CalendarTarget
     var titleTemplate: String
+    var titlePresets: [String]?   // optional so pre-1.1 settings still decode
+    var presetsSeed: Int?         // tracks which default-preset batch was seeded
     var confirmRename: Bool
     var showCentiseconds: Bool
     var haptic: Bool
