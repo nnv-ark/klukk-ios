@@ -16,6 +16,7 @@ final class AppSettings {
     var showCentiseconds: Bool = true
     var haptic: Bool = true
     var hasLinkedCalendar: Bool = false
+    var hasOnboarded: Bool = false
     var selectedCalendarID: String? = nil
     var selectedCalendarName: String? = nil
     var targetSeconds: TimeInterval? = nil
@@ -65,6 +66,8 @@ final class AppSettings {
         s.showCentiseconds = dto.showCentiseconds
         s.haptic = dto.haptic
         s.hasLinkedCalendar = dto.hasLinkedCalendar
+        // Pre-1.1.1 users have no flag; if they already linked, they've onboarded.
+        s.hasOnboarded = dto.hasOnboarded ?? dto.hasLinkedCalendar
         s.selectedCalendarID = dto.selectedCalendarID
         s.selectedCalendarName = dto.selectedCalendarName
         s.targetSeconds = dto.targetSeconds
@@ -81,6 +84,7 @@ final class AppSettings {
             showCentiseconds: showCentiseconds,
             haptic: haptic,
             hasLinkedCalendar: hasLinkedCalendar,
+            hasOnboarded: hasOnboarded,
             selectedCalendarID: selectedCalendarID,
             selectedCalendarName: selectedCalendarName,
             targetSeconds: targetSeconds
@@ -100,6 +104,7 @@ private struct SettingsDTO: Codable {
     var showCentiseconds: Bool
     var haptic: Bool
     var hasLinkedCalendar: Bool
+    var hasOnboarded: Bool?
     var selectedCalendarID: String?
     var selectedCalendarName: String?
     var targetSeconds: TimeInterval?

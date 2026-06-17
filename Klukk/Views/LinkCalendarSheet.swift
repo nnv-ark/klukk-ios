@@ -1,9 +1,12 @@
 import SwiftUI
 
+/// Pre-permission explainer. Per App Review guideline 5.1.1(iv), the only action is
+/// "Continue", which always proceeds to the system Calendar permission prompt — there
+/// is no Skip / exit, and the sheet can't be swiped away.
 struct LinkCalendarSheet: View {
     @Environment(AppSettings.self) private var settings
-    @Environment(\.dismiss) private var dismiss
-    let onLinked: () -> Void
+    /// Called after the permission prompt has been answered (granted or not).
+    let onDone: () -> Void
 
     @State private var isRequesting = false
 
@@ -14,14 +17,14 @@ struct LinkCalendarSheet: View {
                     .font(.title2.weight(.bold))
                     .padding(.top, 8)
 
-                Text("KLUKK turns every timed session into an event in your iOS Calendar. You can export any session as a .ics file, or the whole log as .xml, anytime afterwards.")
+                Text("KLUKK saves every timed session as an event in your iOS Calendar. Continue to allow Calendar access. You can export any session as .ics, or the whole log as .xml, anytime afterwards.")
                     .font(.callout)
                     .foregroundStyle(.secondary)
 
                 Button {
-                    Task { await link() }
+                    Task { await requestAndFinish() }
                 } label: {
-                    Text("Link calendar")
+                    Text("Continue")
                         .font(.body.weight(.bold))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 14)
@@ -39,23 +42,21 @@ struct LinkCalendarSheet: View {
             .background(Color(.systemGroupedBackground))
             .navigationTitle("Link a calendar")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Skip") { dismiss() }
-                }
-            }
         }
+        .interactiveDismissDisabled()
     }
 
-    private func link() async {
+    private func requestAndFinish() async {
         isRequesting = true
-        defer { isRequesting = false }
         let granted = (try? await EventKitService.shared.requestAccess()) ?? false
-        guard granted else { return }
-        if let def = EventKitService.shared.store.defaultCalendarForNewEvents {
+        if granted, let def = EventKitService.shared.store.defaultCalendarForNewEvents {
             settings.selectedCalendarID = def.calendarIdentifier
             settings.selectedCalendarName = def.title
+            settings.hasLinkedCalendar = true
         }
-        onLinked()
+        settings.hasOnboarded = true
+        settings.save()
+        isRequesting = false
+        onDone()
     }
 }

@@ -1,6 +1,7 @@
 import SwiftUI
 import UIKit
 import WidgetKit
+import EventKit
 
 struct StopwatchView: View {
     @Environment(AppSettings.self) private var settings
@@ -94,9 +95,9 @@ struct StopwatchView: View {
                 }
             case .link:
                 LinkCalendarSheet {
-                    settings.hasLinkedCalendar = true
-                    settings.save()
-                    showToast("Linked · \(settings.selectedCalendarName ?? "Calendar")")
+                    if settings.hasLinkedCalendar {
+                        showToast("Linked · \(settings.selectedCalendarName ?? "Calendar")")
+                    }
                     activeSheet = nil
                 }
             case .duration:
@@ -110,7 +111,7 @@ struct StopwatchView: View {
             _ = TimerAlarm.shared   // register the notification delegate early
             syncWithSharedState()
             await reconcilePendingSessions()
-            if !settings.hasLinkedCalendar {
+            if !settings.hasOnboarded {
                 try? await Task.sleep(for: .milliseconds(400))
                 activeSheet = .link
             }
@@ -288,10 +289,16 @@ struct StopwatchView: View {
             } else {
                 finalize(session)
             }
-        } else if settings.hasLinkedCalendar {
+        } else if EventKitService.shared.isAuthorized {
             startTimer()
-        } else {
+        } else if EventKitService.shared.authorizationStatus == .notDetermined {
             activeSheet = .link
+        } else {
+            // Access was denied — guide to Settings rather than re-prompting.
+            showToast("Allow Calendar access in Settings")
+            if let url = URL(string: UIApplication.openSettingsURLString) {
+                UIApplication.shared.open(url)
+            }
         }
     }
 
