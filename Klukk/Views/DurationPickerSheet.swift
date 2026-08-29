@@ -2,6 +2,7 @@ import SwiftUI
 import UIKit
 
 struct DurationPickerSheet: View {
+    @Environment(AppSettings.self) private var settings
     @Environment(\.dismiss) private var dismiss
     @State private var duration: TimeInterval
     let onSet: (TimeInterval?) -> Void
@@ -14,9 +15,9 @@ struct DurationPickerSheet: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                DurationWheel(duration: $duration)
+                DurationWheel(duration: $duration, lang: settings.lang)
                     .frame(maxHeight: 216)
-                Text("A sound plays when the running timer reaches this.")
+                Text(L.targetSoundHint(settings.lang))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -24,14 +25,14 @@ struct DurationPickerSheet: View {
                 Spacer(minLength: 0)
             }
             .padding(.top)
-            .navigationTitle("Target time")
+            .navigationTitle(L.targetTime(settings.lang))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button("Clear") { onSet(nil); dismiss() }
+                    Button(L.clear(settings.lang)) { onSet(nil); dismiss() }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Set") {
+                    Button(L.set(settings.lang)) {
                         onSet(duration > 0 ? duration : nil)
                         dismiss()
                     }
@@ -43,31 +44,54 @@ struct DurationPickerSheet: View {
     }
 }
 
-/// Native hours/minutes countdown wheel (UIDatePicker has no SwiftUI equivalent).
+/// Hours/minutes wheel. UIDatePicker.countDownTimer can't localize its unit
+/// labels, so this is a plain two-component UIPickerView with explicit labels.
 private struct DurationWheel: UIViewRepresentable {
     @Binding var duration: TimeInterval
+    let lang: Lang
 
-    func makeUIView(context: Context) -> UIDatePicker {
-        let picker = UIDatePicker()
-        picker.datePickerMode = .countDownTimer
-        picker.minuteInterval = 1
-        picker.addTarget(context.coordinator, action: #selector(Coordinator.changed(_:)), for: .valueChanged)
+    private var hours: Int { Int(duration) / 3600 }
+    private var minutes: Int { (Int(duration) % 3600) / 60 }
+
+    func makeUIView(context: Context) -> UIPickerView {
+        let picker = UIPickerView()
+        picker.dataSource = context.coordinator
+        picker.delegate = context.coordinator
         return picker
     }
 
-    func updateUIView(_ picker: UIDatePicker, context: Context) {
-        if picker.countDownDuration != duration {
-            picker.countDownDuration = duration
+    func updateUIView(_ picker: UIPickerView, context: Context) {
+        context.coordinator.lang = lang
+        picker.reloadAllComponents()
+        if picker.selectedRow(inComponent: 0) != hours {
+            picker.selectRow(hours, inComponent: 0, animated: false)
+        }
+        if picker.selectedRow(inComponent: 1) != minutes {
+            picker.selectRow(minutes, inComponent: 1, animated: false)
         }
     }
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
 
-    final class Coordinator: NSObject {
+    final class Coordinator: NSObject, UIPickerViewDataSource, UIPickerViewDelegate {
         let parent: DurationWheel
-        init(_ parent: DurationWheel) { self.parent = parent }
-        @MainActor @objc func changed(_ picker: UIDatePicker) {
-            parent.duration = picker.countDownDuration
+        var lang: Lang
+        init(_ parent: DurationWheel) { self.parent = parent; self.lang = parent.lang }
+
+        private var hourUnit: String { lang == .is_ ? "klst" : "hrs" }
+        private var minuteUnit: String { lang == .is_ ? "mín" : "min" }
+
+        func numberOfComponents(in pickerView: UIPickerView) -> Int { 2 }
+        func pickerView(_ pickerView: UIPickerView, numberOfRowsInComponent component: Int) -> Int {
+            component == 0 ? 24 : 60
+        }
+        func pickerView(_ pickerView: UIPickerView, titleForRow row: Int, forComponent component: Int) -> String? {
+            component == 0 ? "\(row) \(hourUnit)" : "\(row) \(minuteUnit)"
+        }
+        func pickerView(_ pickerView: UIPickerView, didSelectRow row: Int, inComponent component: Int) {
+            let h = pickerView.selectedRow(inComponent: 0)
+            let m = pickerView.selectedRow(inComponent: 1)
+            parent.duration = TimeInterval(h * 3600 + m * 60)
         }
     }
 }

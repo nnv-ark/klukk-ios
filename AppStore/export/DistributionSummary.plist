@@ -10,7 +10,7 @@
 				<string>arm64</string>
 			</array>
 			<key>buildNumber</key>
-			<string>1</string>
+			<string>2</string>
 			<key>certificate</key>
 			<dict>
 				<key>SHA1</key>
@@ -20,6 +20,63 @@
 				<key>type</key>
 				<string>Cloud Managed Apple Distribution</string>
 			</dict>
+			<key>embeddedBinaries</key>
+			<array>
+				<dict>
+					<key>architectures</key>
+					<array>
+						<string>arm64</string>
+					</array>
+					<key>buildNumber</key>
+					<string>2</string>
+					<key>certificate</key>
+					<dict>
+						<key>SHA1</key>
+						<string>B7F6F46EDD96C46C3FBD434E6D4860256BC7BE3F</string>
+						<key>dateExpires</key>
+						<string>5.6.2027</string>
+						<key>type</key>
+						<string>Cloud Managed Apple Distribution</string>
+					</dict>
+					<key>entitlements</key>
+					<dict>
+						<key>application-identifier</key>
+						<string>WS56KAUU82.ehf.nnv.klukk.KlukkWidgets</string>
+						<key>beta-reports-active</key>
+						<true/>
+						<key>com.apple.developer.team-identifier</key>
+						<string>WS56KAUU82</string>
+						<key>com.apple.security.application-groups</key>
+						<array>
+							<string>group.ehf.nnv.klukk</string>
+						</array>
+						<key>get-task-allow</key>
+						<false/>
+					</dict>
+					<key>name</key>
+					<string>KlukkWidgetsExtension.appex</string>
+					<key>profile</key>
+					<dict>
+						<key>UUID</key>
+						<string>414aab81-a8a3-4644-82ac-5ed462936b49</string>
+						<key>dateExpires</key>
+						<string>5.6.2027</string>
+						<key>name</key>
+						<string>iOS Team Store Provisioning Profile: ehf.nnv.klukk.KlukkWidgets</string>
+					</dict>
+					<key>symbols</key>
+					<true/>
+					<key>team</key>
+					<dict>
+						<key>id</key>
+						<string>WS56KAUU82</string>
+						<key>name</key>
+						<string></string>
+					</dict>
+					<key>versionNumber</key>
+					<string>1.1</string>
+				</dict>
+			</array>
 			<key>entitlements</key>
 			<dict>
 				<key>application-identifier</key>
@@ -28,6 +85,10 @@
 				<true/>
 				<key>com.apple.developer.team-identifier</key>
 				<string>WS56KAUU82</string>
+				<key>com.apple.security.application-groups</key>
+				<array>
+					<string>group.ehf.nnv.klukk</string>
+				</array>
 				<key>get-task-allow</key>
 				<false/>
 			</dict>
@@ -36,7 +97,7 @@
 			<key>profile</key>
 			<dict>
 				<key>UUID</key>
-				<string>8196b80d-f517-4435-b9a5-2764b33acc84</string>
+				<string>7083de7f-39df-4b3e-89ad-57418298a7df</string>
 				<key>dateExpires</key>
 				<string>5.6.2027</string>
 				<key>name</key>
@@ -52,7 +113,7 @@
 				<string></string>
 			</dict>
 			<key>versionNumber</key>
-			<string>1.0</string>
+			<string>1.1</string>
 		</dict>
 	</array>
 </dict>

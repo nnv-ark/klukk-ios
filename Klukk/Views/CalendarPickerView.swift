@@ -19,7 +19,7 @@ struct CalendarPickerView: View {
                 Section {
                     HStack {
                         ProgressView()
-                        Text("Loading calendars…").foregroundStyle(.primary)
+                        Text(L.loadingCalendars(settings.lang)).foregroundStyle(.primary)
                     }
                 }
             } else if let errorMessage {
@@ -27,7 +27,7 @@ struct CalendarPickerView: View {
                     Text(errorMessage).foregroundStyle(.red)
                 }
             } else {
-                Section("Save events to") {
+                Section(L.saveEventsTo(settings.lang)) {
                     ForEach(calendars, id: \.calendarIdentifier) { cal in
                         Button {
                             settings.selectedCalendarID = cal.calendarIdentifier
@@ -58,25 +58,25 @@ struct CalendarPickerView: View {
                 Button {
                     showCreate = true
                 } label: {
-                    Label("Create new calendar…", systemImage: "plus")
+                    Label(L.createNewCalendar(settings.lang), systemImage: "plus")
                         .foregroundStyle(.primary)
                 }
             }
         }
-        .navigationTitle("Calendar")
+        .navigationTitle(L.calendar(settings.lang))
         .navigationBarTitleDisplayMode(.inline)
         .task { await reload() }
-        .alert("New calendar", isPresented: $showCreate) {
-            TextField("Name", text: $newCalendarName)
-            Button("Cancel", role: .cancel) {
+        .alert(L.newCalendar(settings.lang), isPresented: $showCreate) {
+            TextField(L.name(settings.lang), text: $newCalendarName)
+            Button(L.cancel(settings.lang), role: .cancel) {
                 newCalendarName = ""
             }
-            Button("Create") {
+            Button(L.create(settings.lang)) {
                 Task { await create() }
             }
             .disabled(newCalendarName.trimmingCharacters(in: .whitespaces).isEmpty)
         } message: {
-            Text("Pick a name for the new iOS calendar Klukk will save sessions to.")
+            Text(L.newCalendarMessage(settings.lang))
         }
     }
 
@@ -93,7 +93,7 @@ struct CalendarPickerView: View {
                 settings.save()
             }
         } catch {
-            errorMessage = "Calendar access not granted. Allow in Settings → Privacy → Calendars."
+            errorMessage = L.calendarAccessNotGranted(settings.lang)
         }
         isLoading = false
     }
@@ -112,7 +112,7 @@ struct CalendarPickerView: View {
             settings.save()
             await reload()
         } catch {
-            errorMessage = "Couldn't create calendar. Make sure Klukk has full Calendar access."
+            errorMessage = L.couldntCreateCalendar(settings.lang)
         }
     }
 }

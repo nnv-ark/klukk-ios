@@ -6,12 +6,15 @@ final class EventKitService {
     static let shared = EventKitService()
     let store = EKEventStore()
 
+    var authorizationStatus: EKAuthorizationStatus {
+        EKEventStore.authorizationStatus(for: .event)
+    }
+
+    /// True once the user has granted full Calendar access.
+    var isAuthorized: Bool { authorizationStatus == .fullAccess }
+
     func requestAccess() async throws -> Bool {
-        if #available(iOS 17.0, *) {
-            return try await store.requestFullAccessToEvents()
-        } else {
-            return try await store.requestAccess(to: .event)
-        }
+        try await store.requestFullAccessToEvents()
     }
 
     func writableCalendars() async throws -> [EKCalendar] {

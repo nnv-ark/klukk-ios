@@ -10,7 +10,7 @@ struct PresetsView: View {
     var body: some View {
         @Bindable var settings = settings
         Form {
-            Section("Your presets") {
+            Section(L.yourPresets(settings.lang)) {
                 ForEach(settings.titlePresets, id: \.self) { preset in
                     Button {
                         settings.titleTemplate = preset
@@ -39,24 +39,24 @@ struct PresetsView: View {
                     newPreset = ""
                     showAdd = true
                 } label: {
-                    Label("Add preset", systemImage: "plus")
+                    Label(L.addPreset(settings.lang), systemImage: "plus")
                 }
             } footer: {
-                Text("Tokens: \(AppSettings.templateTokens)")
+                Text(L.tokens(settings.lang, AppSettings.templateTokens))
             }
         }
-        .navigationTitle("Presets")
+        .navigationTitle(L.presets(settings.lang))
         .navigationBarTitleDisplayMode(.inline)
-        .alert("Add preset", isPresented: $showAdd) {
-            TextField("e.g. Session {time}", text: $newPreset)
-            Button("Cancel", role: .cancel) {}
-            Button("Add") {
+        .alert(L.addPreset(settings.lang), isPresented: $showAdd) {
+            TextField(L.presetPlaceholder(settings.lang), text: $newPreset)
+            Button(L.cancel(settings.lang), role: .cancel) {}
+            Button(L.add(settings.lang)) {
                 settings.addPreset(newPreset)
                 settings.titleTemplate = newPreset.trimmingCharacters(in: .whitespaces)
                 settings.save()
             }
         } message: {
-            Text("Use tokens: \(AppSettings.templateTokens)")
+            Text(L.useTokens(settings.lang, AppSettings.templateTokens))
         }
     }
 }

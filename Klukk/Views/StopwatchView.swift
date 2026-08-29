@@ -1,6 +1,7 @@
 import SwiftUI
 import UIKit
 import WidgetKit
+import EventKit
 
 struct StopwatchView: View {
     @Environment(AppSettings.self) private var settings
@@ -94,9 +95,9 @@ struct StopwatchView: View {
                 }
             case .link:
                 LinkCalendarSheet {
-                    settings.hasLinkedCalendar = true
-                    settings.save()
-                    showToast("Linked · \(settings.selectedCalendarName ?? "Calendar")")
+                    if settings.hasLinkedCalendar {
+                        showToast(L.linkedTo(settings.lang, settings.selectedCalendarName ?? L.calendar(settings.lang)))
+                    }
                     activeSheet = nil
                 }
             case .duration:
@@ -110,7 +111,7 @@ struct StopwatchView: View {
             _ = TimerAlarm.shared   // register the notification delegate early
             syncWithSharedState()
             await reconcilePendingSessions()
-            if !settings.hasLinkedCalendar {
+            if !settings.hasOnboarded {
                 try? await Task.sleep(for: .milliseconds(400))
                 activeSheet = .link
             }
@@ -157,7 +158,7 @@ struct StopwatchView: View {
                     .foregroundStyle(.primary)
                     .padding(6)
             }
-            .accessibilityLabel("Settings")
+            .accessibilityLabel(L.settings(settings.lang))
         }
     }
 
@@ -203,7 +204,7 @@ struct StopwatchView: View {
             guard settings.haptic else { return nil }
             return newValue ? .impact(weight: .light) : .impact(weight: .medium)
         }
-        .accessibilityLabel(isRunning ? "Stop and save to calendar" : "Start timing")
+        .accessibilityLabel(isRunning ? L.stopAndSave(settings.lang) : L.startTiming(settings.lang))
     }
 
     /// Single calendar entry point: the destination icon + the selected calendar's name.
@@ -224,11 +225,11 @@ struct StopwatchView: View {
             .shadow(color: .black.opacity(0.08), radius: 10, y: 4)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(settings.hasLinkedCalendar ? "Calendar: \(calendarPillLabel)" : "Link a calendar")
+        .accessibilityLabel(settings.hasLinkedCalendar ? L.calendarA11y(settings.lang, calendarPillLabel) : L.linkACalendar(settings.lang))
         .accessibilityHint(
             settings.hasLinkedCalendar
-            ? "Shows your recorded sessions"
-            : "Choose where recordings are sent"
+            ? L.showsYourSessions(settings.lang)
+            : L.chooseDestination(settings.lang)
         )
     }
 
@@ -263,8 +264,8 @@ struct StopwatchView: View {
     }
 
     private var calendarPillLabel: String {
-        guard settings.hasLinkedCalendar else { return "Not linked" }
-        return settings.selectedCalendarName ?? "Calendar"
+        guard settings.hasLinkedCalendar else { return L.notLinked(settings.lang) }
+        return settings.selectedCalendarName ?? L.calendar(settings.lang)
     }
 
     // MARK: - Computed
@@ -288,10 +289,16 @@ struct StopwatchView: View {
             } else {
                 finalize(session)
             }
-        } else if settings.hasLinkedCalendar {
+        } else if EventKitService.shared.isAuthorized {
             startTimer()
-        } else {
+        } else if EventKitService.shared.authorizationStatus == .notDetermined {
             activeSheet = .link
+        } else {
+            // Access was denied — guide to Settings rather than re-prompting.
+            showToast(L.allowAccessInSettings(settings.lang))
+            if let url = URL(string: UIApplication.openSettingsURLString) {
+                UIApplication.shared.open(url)
+            }
         }
     }
 
@@ -325,7 +332,7 @@ struct StopwatchView: View {
         WidgetCenter.shared.reloadAllTimelines()
 
         var session = Session(title: "", startedAt: started, endedAt: ended)
-        session.title = Format.renderTitle(settings.titleTemplate, session: session, index: store.sessions.count + 1)
+        session.title = Format.renderTitle(settings.titleTemplate, session: session, index: store.sessions.count + 1, lang: settings.lang)
         return session
     }
 
@@ -341,9 +348,9 @@ struct StopwatchView: View {
     private func deliver(_ session: Session) async {
         do {
             try await EventKitService.shared.save(session, calendarID: settings.selectedCalendarID)
-            showToast("Saved · \(settings.selectedCalendarName ?? "Calendar")")
+            showToast(L.savedTo(settings.lang, settings.selectedCalendarName ?? L.calendar(settings.lang)))
         } catch {
-            showToast("Couldn't save to Calendar")
+            showToast(L.couldntSave(settings.lang))
         }
     }
 

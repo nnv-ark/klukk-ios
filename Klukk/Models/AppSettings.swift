@@ -9,26 +9,39 @@ enum AppAppearance: String, Codable, CaseIterable {
 @Observable
 final class AppSettings {
     var appearance: AppAppearance = .system
-    var titleTemplate: String = "Session {time}"
-    var titlePresets: [String] = AppSettings.defaultPresets
+    var language: AppLanguage = .system
+    var titleTemplate: String = AppSettings.defaultTemplate(Localization.stored)
+    var titlePresets: [String] = AppSettings.defaultPresets(Localization.stored)
     var presetsSeed: Int = AppSettings.currentPresetsSeed
     var confirmRename: Bool = false
     var showCentiseconds: Bool = true
     var haptic: Bool = true
     var hasLinkedCalendar: Bool = false
+    var hasOnboarded: Bool = false
     var selectedCalendarID: String? = nil
     var selectedCalendarName: String? = nil
     var targetSeconds: TimeInterval? = nil
 
-    static let defaultPresets = [
-        "Session {time}", "{date} {time}", "Focus {n}",
-        "Work", "Meditation", "Workout"
-    ]
+    /// The default session-name template for a fresh install, in the user's language.
+    static func defaultTemplate(_ lang: Lang) -> String {
+        lang == .is_ ? "Lota {time}" : "Session {time}"
+    }
+    /// Starter title presets for a fresh install (and seed top-ups), in the user's language.
+    static func defaultPresets(_ lang: Lang) -> [String] {
+        lang == .is_
+            ? ["Lota {time}", "{date} {time}", "Einbeiting {n}", "Vinna", "Hugleiðsla", "Æfing"]
+            : ["Session {time}", "{date} {time}", "Focus {n}", "Work", "Meditation", "Workout"]
+    }
     /// Bump when adding new default presets; existing users get the new ones topped up
-    /// once (deletions afterwards stick).
-    static let currentPresetsSeed = 2
+    /// once (deletions afterwards stick). Seed 3 = language-aware starter presets.
+    static let currentPresetsSeed = 3
     /// Tokens that expand when a session is named. Shown wherever a template is edited.
     static let templateTokens = "{time} {date} {n} {duration}"
+
+    /// The concrete language to render in, resolving `.system` against the device
+    /// locale. Reading this inside a view's `body` makes the view re-render when
+    /// the language switch changes, so the UI flips without a restart.
+    var lang: Lang { Localization.resolve(language) }
 
     private static let key = "klukk.settings.v1"
 
@@ -52,11 +65,12 @@ final class AppSettings {
         }
         let s = AppSettings()
         s.appearance = dto.appearance ?? .system
+        s.language = dto.language ?? .system
         s.titleTemplate = dto.titleTemplate
-        s.titlePresets = dto.titlePresets ?? Self.defaultPresets
+        s.titlePresets = dto.titlePresets ?? Self.defaultPresets(s.lang)
         // Top up newly-added default presets once for existing users; deletions stick.
         if (dto.presetsSeed ?? 1) < Self.currentPresetsSeed {
-            for preset in Self.defaultPresets where !s.titlePresets.contains(preset) {
+            for preset in Self.defaultPresets(s.lang) where !s.titlePresets.contains(preset) {
                 s.titlePresets.append(preset)
             }
         }
@@ -65,6 +79,8 @@ final class AppSettings {
         s.showCentiseconds = dto.showCentiseconds
         s.haptic = dto.haptic
         s.hasLinkedCalendar = dto.hasLinkedCalendar
+        // Pre-1.1.1 users have no flag; if they already linked, they've onboarded.
+        s.hasOnboarded = dto.hasOnboarded ?? dto.hasLinkedCalendar
         s.selectedCalendarID = dto.selectedCalendarID
         s.selectedCalendarName = dto.selectedCalendarName
         s.targetSeconds = dto.targetSeconds
@@ -74,6 +90,7 @@ final class AppSettings {
     func save() {
         let dto = SettingsDTO(
             appearance: appearance,
+            language: language,
             titleTemplate: titleTemplate,
             titlePresets: titlePresets,
             presetsSeed: presetsSeed,
@@ -81,6 +98,7 @@ final class AppSettings {
             showCentiseconds: showCentiseconds,
             haptic: haptic,
             hasLinkedCalendar: hasLinkedCalendar,
+            hasOnboarded: hasOnboarded,
             selectedCalendarID: selectedCalendarID,
             selectedCalendarName: selectedCalendarName,
             targetSeconds: targetSeconds
@@ -93,6 +111,7 @@ final class AppSettings {
 
 private struct SettingsDTO: Codable {
     var appearance: AppAppearance?   // optional so pre-toggle settings still decode
+    var language: AppLanguage?       // optional so pre-language settings still decode
     var titleTemplate: String
     var titlePresets: [String]?   // optional so pre-1.1 settings still decode
     var presetsSeed: Int?         // tracks which default-preset batch was seeded
@@ -100,6 +119,7 @@ private struct SettingsDTO: Codable {
     var showCentiseconds: Bool
     var haptic: Bool
     var hasLinkedCalendar: Bool
+    var hasOnboarded: Bool?
     var selectedCalendarID: String?
     var selectedCalendarName: String?
     var targetSeconds: TimeInterval?

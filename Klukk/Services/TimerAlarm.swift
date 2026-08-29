@@ -25,7 +25,7 @@ final class TimerAlarm: NSObject, UNUserNotificationCenterDelegate {
         guard seconds > 0 else { return }
         let content = UNMutableNotificationContent()
         content.title = "KLUKK!"
-        content.body = "Target reached."
+        content.body = L.targetReached(Localization.stored)
         content.sound = .default
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: seconds, repeats: false)
         UNUserNotificationCenter.current().add(

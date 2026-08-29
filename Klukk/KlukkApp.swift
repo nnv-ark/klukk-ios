@@ -10,6 +10,7 @@ struct KlukkApp: App {
             StopwatchView()
                 .environment(settings)
                 .environment(sessionStore)
+                .environment(\.locale, Locale(identifier: settings.lang == .is_ ? "is_IS" : "en_US"))
                 .preferredColorScheme(settings.appearance.colorScheme)
         }
     }
