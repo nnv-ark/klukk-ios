@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct CalendarSheet: View {
+    @Environment(AppSettings.self) private var settings
     @Environment(SessionStore.self) private var store
     @Environment(\.dismiss) private var dismiss
 
@@ -11,21 +12,21 @@ struct CalendarSheet: View {
             Group {
                 if store.sessions.isEmpty {
                     ContentUnavailableView(
-                        "No recordings yet",
+                        L.noRecordingsYet(settings.lang),
                         systemImage: "clock.badge.checkmark",
-                        description: Text("Tap the button to start a timer. When you stop, the session lands in your calendar.")
+                        description: Text(L.noRecordingsDescription(settings.lang))
                     )
                 } else {
                     List {
                         ForEach(grouped, id: \.label) { group in
                             Section(group.label) {
                                 ForEach(group.items) { session in
-                                    SessionRow(session: session)
+                                    SessionRow(session: session, lang: settings.lang)
                                         .contextMenu {
                                             Button {
                                                 shareICS(session)
                                             } label: {
-                                                Label("Share as .ics", systemImage: "square.and.arrow.up")
+                                                Label(L.shareAsICS(settings.lang), systemImage: "square.and.arrow.up")
                                             }
                                         }
                                         .swipeActions(edge: .leading) {
@@ -43,11 +44,11 @@ struct CalendarSheet: View {
                     .listStyle(.insetGrouped)
                 }
             }
-            .navigationTitle("Calendar")
+            .navigationTitle(L.calendar(settings.lang))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Close") { dismiss() }
+                    Button(L.close(settings.lang)) { dismiss() }
                 }
             }
             .sheet(item: $share) { item in
@@ -68,12 +69,13 @@ struct CalendarSheet: View {
         }
         return groups
             .sorted { $0.key > $1.key }
-            .map { (Format.dayLabel($0.key), $0.value.sorted { $0.startedAt > $1.startedAt }) }
+            .map { (Format.dayLabel($0.key, settings.lang), $0.value.sorted { $0.startedAt > $1.startedAt }) }
     }
 }
 
 private struct SessionRow: View {
     let session: Session
+    let lang: Lang
 
     var body: some View {
         HStack(spacing: 12) {
@@ -82,7 +84,7 @@ private struct SessionRow: View {
                 .frame(width: 4, height: 36)
             VStack(alignment: .leading, spacing: 2) {
                 Text(session.title).font(.body.weight(.semibold))
-                Text(Format.timeOfDay.string(from: session.startedAt))
+                Text(Format.timeOfDay(session.startedAt, lang))
                     .font(.caption).foregroundStyle(.secondary)
             }
             Spacer()

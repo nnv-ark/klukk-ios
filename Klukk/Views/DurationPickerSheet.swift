@@ -2,6 +2,7 @@ import SwiftUI
 import UIKit
 
 struct DurationPickerSheet: View {
+    @Environment(AppSettings.self) private var settings
     @Environment(\.dismiss) private var dismiss
     @State private var duration: TimeInterval
     let onSet: (TimeInterval?) -> Void
@@ -16,7 +17,7 @@ struct DurationPickerSheet: View {
             VStack(spacing: 0) {
                 DurationWheel(duration: $duration)
                     .frame(maxHeight: 216)
-                Text("A sound plays when the running timer reaches this.")
+                Text(L.targetSoundHint(settings.lang))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -24,14 +25,14 @@ struct DurationPickerSheet: View {
                 Spacer(minLength: 0)
             }
             .padding(.top)
-            .navigationTitle("Target time")
+            .navigationTitle(L.targetTime(settings.lang))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button("Clear") { onSet(nil); dismiss() }
+                    Button(L.clear(settings.lang)) { onSet(nil); dismiss() }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Set") {
+                    Button(L.set(settings.lang)) {
                         onSet(duration > 0 ? duration : nil)
                         dismiss()
                     }

@@ -48,6 +48,19 @@ enum RunningState {
 /// app writes (extra keys are ignored by `JSONDecoder`).
 struct SharedSettings: Codable {
     var titleTemplate: String = "Session {time}"
+    var language: AppLanguage = .system
+
+    private enum CodingKeys: String, CodingKey { case titleTemplate, language }
+
+    init() {}
+
+    // Resilient decode: pre-language settings JSON has no `language` key, and the
+    // app may write keys this subset doesn't model — both are tolerated.
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        titleTemplate = try c.decodeIfPresent(String.self, forKey: .titleTemplate) ?? "Session {time}"
+        language = try c.decodeIfPresent(AppLanguage.self, forKey: .language) ?? .system
+    }
 
     static func load() -> SharedSettings {
         guard let data = AppGroup.defaults.data(forKey: "klukk.settings.v1"),

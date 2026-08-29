@@ -13,18 +13,18 @@ struct LinkCalendarSheet: View {
     var body: some View {
         NavigationStack {
             VStack(alignment: .leading, spacing: 16) {
-                Text("Save your sessions to Calendar")
+                Text(L.saveSessionsToCalendar(settings.lang))
                     .font(.title2.weight(.bold))
                     .padding(.top, 8)
 
-                Text("KLUKK saves every timed session as an event in your iOS Calendar. Continue to allow Calendar access. You can export any session as .ics, or the whole log as .xml, anytime afterwards.")
+                Text(L.linkCalendarBody(settings.lang))
                     .font(.callout)
                     .foregroundStyle(.secondary)
 
                 Button {
                     Task { await requestAndFinish() }
                 } label: {
-                    Text("Continue")
+                    Text(L.continueButton(settings.lang))
                         .font(.body.weight(.bold))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 14)
@@ -34,13 +34,13 @@ struct LinkCalendarSheet: View {
                 .disabled(isRequesting)
 
                 Spacer()
-                Text("© NNV ehf. · All rights reserved")
+                Text(L.copyright(settings.lang))
                     .font(.caption2).foregroundStyle(.tertiary)
                     .frame(maxWidth: .infinity)
             }
             .padding()
             .background(Color(.systemGroupedBackground))
-            .navigationTitle("Link a calendar")
+            .navigationTitle(L.linkACalendar(settings.lang))
             .navigationBarTitleDisplayMode(.inline)
         }
         .interactiveDismissDisabled()

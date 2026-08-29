@@ -24,10 +24,10 @@ struct RenameSheet: View {
     var body: some View {
         NavigationStack {
             VStack(alignment: .leading, spacing: 14) {
-                Text("\(Format.timeOfDay.string(from: session.startedAt)) · \(Format.durationLong(session.duration))")
+                Text("\(Format.timeOfDay(session.startedAt, settings.lang)) · \(Format.durationLong(session.duration, settings.lang))")
                     .font(.caption).foregroundStyle(.secondary)
 
-                TextField("Title", text: $title)
+                TextField(L.title(settings.lang), text: $title)
                     .textFieldStyle(.plain)
                     .font(.title3.weight(.semibold))
                     .padding(14)
@@ -42,7 +42,7 @@ struct RenameSheet: View {
                     Button(role: .cancel) {
                         onDiscard()
                     } label: {
-                        Text("Discard")
+                        Text(L.discard(settings.lang))
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 12)
                             .foregroundStyle(.black)
@@ -50,7 +50,7 @@ struct RenameSheet: View {
                     .whiteCard()
 
                     Button(action: save) {
-                        Text("Save to calendar")
+                        Text(L.saveToCalendar(settings.lang))
                             .font(.body.weight(.bold))
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 12)
@@ -62,7 +62,7 @@ struct RenameSheet: View {
             }
             .padding()
             .background(Color(.systemGroupedBackground))
-            .navigationTitle("Name event")
+            .navigationTitle(L.nameEvent(settings.lang))
             .navigationBarTitleDisplayMode(.inline)
             .task {
                 chosenCalendarID = settings.selectedCalendarID
@@ -79,11 +79,11 @@ struct RenameSheet: View {
         Menu {
             ForEach(settings.titlePresets, id: \.self) { preset in
                 Button(preset) {
-                    title = Format.renderTitle(preset, session: session, index: store.sessions.count + 1)
+                    title = Format.renderTitle(preset, session: session, index: store.sessions.count + 1, lang: settings.lang)
                 }
             }
         } label: {
-            menuLabel(systemImage: "textformat", text: "Preset")
+            menuLabel(systemImage: "textformat", text: L.preset(settings.lang))
         }
         .disabled(settings.titlePresets.isEmpty)
     }
@@ -103,7 +103,7 @@ struct RenameSheet: View {
                 }
             }
         } label: {
-            menuLabel(systemImage: "calendar", text: chosenCalendarName ?? "Calendar")
+            menuLabel(systemImage: "calendar", text: chosenCalendarName ?? L.calendar(settings.lang))
         }
         .disabled(calendars.isEmpty)
     }

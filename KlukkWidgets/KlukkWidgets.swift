@@ -83,7 +83,7 @@ struct KlukkWidget: Widget {
                 .containerBackground(Color(.background), for: .widget)
         }
         .configurationDisplayName("KLUKK!")
-        .description("Tap the pink button to start and stop. Sessions land in your calendar.")
+        .description(L.widgetDescription(Localization.stored))
         .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
     }
 }
@@ -94,6 +94,10 @@ struct KlukkWidget: Widget {
 struct KlukkWidgetView: View {
     @Environment(\.widgetFamily) private var family
     let entry: KlukkEntry
+
+    /// The widget runs in its own process, so it resolves the language from the
+    /// preference the app persisted to the shared defaults.
+    private var lang: Lang { Localization.stored }
 
     var body: some View {
         switch family {
@@ -124,7 +128,7 @@ struct KlukkWidgetView: View {
                 }
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(entry.runningSince == nil ? "Start timing" : "Stop and save")
+        .accessibilityLabel(entry.runningSince == nil ? L.startTiming(lang) : L.stopAndSave(lang))
     }
 
     private var header: some View {
@@ -138,7 +142,7 @@ struct KlukkWidgetView: View {
                     .monospacedDigit()
                     .minimumScaleFactor(0.6)
                     .lineLimit(1)
-                Text("today · \(entry.todayCount) session\(entry.todayCount == 1 ? "" : "s")")
+                Text(L.todayCount(lang, entry.todayCount))
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(.secondary)
             }
@@ -171,7 +175,7 @@ struct KlukkWidgetView: View {
                 }
             }
             if entry.recent.isEmpty {
-                Text("No sessions yet — tap the button.")
+                Text(L.noSessionsTapButton(lang))
                     .font(.system(size: 13))
                     .foregroundStyle(.secondary)
             }

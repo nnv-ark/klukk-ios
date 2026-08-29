@@ -1,4 +1,5 @@
 import SwiftUI
+import WidgetKit
 
 struct SettingsSheet: View {
     @Environment(AppSettings.self) private var settings
@@ -17,14 +18,15 @@ struct SettingsSheet: View {
                 namingSection
                 behaviorSection
                 appearanceSection
+                languageSection
                 clearSection
                 footerSection
             }
-            .navigationTitle("Settings")
+            .navigationTitle(L.settings(settings.lang))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Close") { dismiss() }
+                    Button(L.close(settings.lang)) { dismiss() }
                 }
             }
             .onChange(of: settings.titleTemplate) { _, _ in settings.save() }
@@ -32,9 +34,14 @@ struct SettingsSheet: View {
             .onChange(of: settings.showCentiseconds) { _, _ in settings.save() }
             .onChange(of: settings.haptic) { _, _ in settings.save() }
             .onChange(of: settings.appearance) { _, _ in settings.save() }
-            .confirmationDialog("Delete all recorded sessions?", isPresented: $confirmClear, titleVisibility: .visible) {
-                Button("Delete", role: .destructive) { onClear() }
-                Button("Cancel", role: .cancel) {}
+            .onChange(of: settings.language) { _, _ in
+                settings.save()
+                // The widget reads the language from the shared defaults; refresh it now.
+                WidgetCenter.shared.reloadAllTimelines()
+            }
+            .confirmationDialog(L.deleteAllConfirm(settings.lang), isPresented: $confirmClear, titleVisibility: .visible) {
+                Button(L.delete(settings.lang), role: .destructive) { onClear() }
+                Button(L.cancel(settings.lang), role: .cancel) {}
             }
             .sheet(item: $xmlExport) { item in
                 ShareSheet(url: item.url)
@@ -46,14 +53,14 @@ struct SettingsSheet: View {
 
     @ViewBuilder
     private var calendarSection: some View {
-        Section("Calendar") {
+        Section(L.calendar(settings.lang)) {
             NavigationLink {
                 CalendarPickerView()
             } label: {
                 HStack {
-                    Label("Calendar", systemImage: "calendar")
+                    Label(L.calendar(settings.lang), systemImage: "calendar")
                     Spacer()
-                    Text(settings.selectedCalendarName ?? "Default")
+                    Text(settings.selectedCalendarName ?? L.defaultCalendar(settings.lang))
                         .foregroundStyle(.secondary)
                 }
             }
@@ -68,58 +75,72 @@ struct SettingsSheet: View {
                     xmlExport = ShareableURL(url: url)
                 }
             } label: {
-                Label("Export all as .xml", systemImage: "square.and.arrow.up")
+                Label(L.exportAllAsXML(settings.lang), systemImage: "square.and.arrow.up")
             }
             .disabled(store.sessions.isEmpty)
         } header: {
-            Text("Export")
+            Text(L.export(settings.lang))
         } footer: {
-            Text("Every session is saved to your calendar. Export the whole log as .xml, or share a single session as .ics from the calendar list.")
+            Text(L.exportFooter(settings.lang))
         }
     }
 
     @ViewBuilder
     private var namingSection: some View {
         @Bindable var settings = settings
-        Section("Naming") {
-            TextField("Title template", text: $settings.titleTemplate)
+        Section(L.naming(settings.lang)) {
+            TextField(L.titleTemplate(settings.lang), text: $settings.titleTemplate)
                 .font(.body.monospaced())
             NavigationLink {
                 PresetsView()
             } label: {
                 HStack {
-                    Text("Presets")
+                    Text(L.presets(settings.lang))
                     Spacer()
                     Text(presetTrailingLabel)
                         .foregroundStyle(.secondary)
                 }
             }
-            Toggle("Ask to rename after stop", isOn: $settings.confirmRename)
+            Toggle(L.askToRename(settings.lang), isOn: $settings.confirmRename)
         }
     }
 
     /// Shows the matching preset name, or "Custom" when the template is hand-edited.
     private var presetTrailingLabel: String {
-        settings.titlePresets.contains(settings.titleTemplate) ? settings.titleTemplate : "Custom"
+        settings.titlePresets.contains(settings.titleTemplate) ? settings.titleTemplate : L.custom(settings.lang)
     }
 
     @ViewBuilder
     private var behaviorSection: some View {
         @Bindable var settings = settings
-        Section("Behavior") {
-            Toggle("Show centiseconds", isOn: $settings.showCentiseconds)
-            Toggle("Haptic on start/stop", isOn: $settings.haptic)
+        Section(L.behavior(settings.lang)) {
+            Toggle(L.showCentiseconds(settings.lang), isOn: $settings.showCentiseconds)
+            Toggle(L.hapticOnStartStop(settings.lang), isOn: $settings.haptic)
         }
     }
 
     @ViewBuilder
     private var appearanceSection: some View {
         @Bindable var settings = settings
-        Section("Appearance") {
-            Picker("Appearance", selection: $settings.appearance) {
-                Text("System").tag(AppAppearance.system)
-                Text("Light").tag(AppAppearance.light)
-                Text("Dark").tag(AppAppearance.dark)
+        Section(L.appearance(settings.lang)) {
+            Picker(L.appearance(settings.lang), selection: $settings.appearance) {
+                Text(L.system(settings.lang)).tag(AppAppearance.system)
+                Text(L.light(settings.lang)).tag(AppAppearance.light)
+                Text(L.dark(settings.lang)).tag(AppAppearance.dark)
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+        }
+    }
+
+    @ViewBuilder
+    private var languageSection: some View {
+        @Bindable var settings = settings
+        Section(L.language(settings.lang)) {
+            Picker(L.language(settings.lang), selection: $settings.language) {
+                Text(L.system(settings.lang)).tag(AppLanguage.system)
+                Text("Íslenska").tag(AppLanguage.icelandic)
+                Text("English").tag(AppLanguage.english)
             }
             .pickerStyle(.segmented)
             .labelsHidden()
@@ -129,7 +150,7 @@ struct SettingsSheet: View {
     @ViewBuilder
     private var clearSection: some View {
         Section {
-            Button("Clear all recordings", role: .destructive) {
+            Button(L.clearAllRecordings(settings.lang), role: .destructive) {
                 confirmClear = true
             }
         }
@@ -140,7 +161,7 @@ struct SettingsSheet: View {
         Section {
             VStack(alignment: .leading, spacing: 4) {
                 Text("KLUKK").font(.body.weight(.semibold))
-                Text("© NNV ehf. · All rights reserved")
+                Text(L.copyright(settings.lang))
                     .font(.caption).foregroundStyle(.secondary)
             }
         }
